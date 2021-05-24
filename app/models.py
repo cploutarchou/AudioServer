@@ -145,10 +145,16 @@ def last_7_days_upload():
                     "day": {"$dayOfMonth": "$created_at"},
                     "year": {"$year": "$created_at"}
                 },
-                "count": {"$sum": 1}
+                "items": {"$sum": 1}
             }
         }
 
     ])
+    df_data = []
     data = json.loads(dumps(data))
-    return jsonify(data)
+    for i in range(len(data)):
+        dat = data[i]
+        df_data.append(
+            dict(date=f"{dat['_id']['day']}-{dat['_id']['month']}-{dat['_id']['year']}", items=data[i]['items']))
+
+    return dict(data=df_data)

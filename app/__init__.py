@@ -1,3 +1,4 @@
+import json
 import os
 
 import pandas as pd
@@ -18,6 +19,7 @@ ALLOWED_EXTENSIONS = set(['mp3', 'wav', 'ogg'])
 client = MongoClient(port=27017, host='localhost')
 db = client['AudioServer']
 from app.models import *
+
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -60,20 +62,20 @@ def last_7_days_upload():
     return models.last_7_days_upload()
 
 
-@app.route('/chart1')
-def chart1():
+@app.route('/chart')
+def chart():
     data = last_7_days_upload()
-    print(type(data))
-    y = json.loads(data)
-    df = pd.read_json(y)
+    df = pd.DataFrame(data['data'])
+    fig = px.bar(df, x='date', y='items',barmode='stack',
+                 hover_data=['date', 'items'], color='date',
+                 labels={'pop': 'population of Canada'}, height=350)
 
-    fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
-
+    fig.update_layout(barmode='stack')
+    fig.update_xaxes(categoryorder='category ascending')
     graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-    header = "Fruit in North America"
+    header = "Weekly Uploads"
     description = """
-    A academic study of the number of apples, oranges and bananas in the cities of
-    San Francisco and Montreal would probably not come up with this chart.
+  
     """
     return render_template('dash.html', graphJSON=graphJSON, header=header, description=description)
 
