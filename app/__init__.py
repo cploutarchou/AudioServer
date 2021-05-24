@@ -1,11 +1,11 @@
-from pprint import pprint
-
-from flask import Flask, redirect, render_template, request, session, url_for, flash
-from pymongo import MongoClient
-
-from werkzeug.utils import secure_filename
-
 import os
+
+import pandas as pd
+import plotly
+from flask import Flask, redirect, render_template, request, session, flash
+from pymongo import MongoClient
+from werkzeug.utils import secure_filename
+import plotly.express as px
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
@@ -18,7 +18,6 @@ ALLOWED_EXTENSIONS = set(['mp3', 'wav', 'ogg'])
 client = MongoClient(port=27017, host='localhost')
 db = client['AudioServer']
 from app.models import *
-
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -54,6 +53,29 @@ def top_10():
 @app.route('/avg', methods=['GET'])
 def avg():
     return models.get_average_file_size()
+
+
+@app.route('/last_7_days_upload', methods=['GET'])
+def last_7_days_upload():
+    return models.last_7_days_upload()
+
+
+@app.route('/chart1')
+def chart1():
+    data = last_7_days_upload()
+    print(type(data))
+    y = json.loads(data)
+    df = pd.read_json(y)
+
+    fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
+
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    header = "Fruit in North America"
+    description = """
+    A academic study of the number of apples, oranges and bananas in the cities of
+    San Francisco and Montreal would probably not come up with this chart.
+    """
+    return render_template('dash.html', graphJSON=graphJSON, header=header, description=description)
 
 
 @app.route('/', methods=['GET', 'POST'])
