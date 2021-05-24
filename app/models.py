@@ -1,10 +1,26 @@
 import datetime
 import itertools
 import json
+import math
+import pprint
+import statistics
 import time
 from datetime import datetime
+
+import pymongo
+from bson import SON
 from bson.objectid import ObjectId
 from app import db
+
+
+def convert_size(size_bytes):
+    if size_bytes == 0:
+        return "0B"
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return f"{s} {size_name[i]}"
 
 
 def insert_entry(data: dict):
@@ -70,3 +86,48 @@ def get_upload_details(upload_id):
             final_data.append(item)
 
     return json.dumps(final_data, default=str)
+
+
+def get_file(file_id):
+    files = db.Files
+    res = files.find_one({"_id": ObjectId(file_id)})
+    res.pop("_id", None)
+    if res and "file_size" in res:
+        res['file_size'] = convert_size(res["file_size"])
+        if res['status'] == 1:
+            res['status'] = "active"
+        else:
+            print("else")
+            res['status'] = "deleted"
+
+    return json.dumps(res, default=str)
+
+
+def get_top_10():
+    from bson.json_util import dumps
+    data = db.Files.aggregate([
+        {"$group": {
+            "_id": {
+                "format_type": "$format_type"
+            },
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id.format_type": 1}},
+        {"$group": {
+            "_id": "$_id.format_type",
+            "count": {"$mergeObjects": {"$arrayToObject": [[["$_id.format_type", "$count"]]]}}
+        }},
+        {"$limit": 1}])
+
+    return dumps(list(data))
+
+
+def get_average_file_size():
+    from bson.json_util import dumps
+    data = db.Files.aggregate([
+        {"$group": {"_id": "_id", "AverageValue": {"$avg": "$file_size"}}}
+    ])
+    list_cur = list(data)
+
+    data  = convert_size(int(list_cur[0]['AverageValue']))
+    return {"AverageValue" : data}
