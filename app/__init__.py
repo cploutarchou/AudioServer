@@ -35,6 +35,27 @@ def find(id=None):
     return models.get_upload_details(id)
 
 
+@app.route('/file/<id>', methods=['GET'])
+def get_file(id):
+    if id is None:
+        return {
+            'status_code': 400,
+            'status_msg': 'Bad Request',
+            'description': "Post id is required."
+        }
+    return models.get_file(id)
+
+
+@app.route('/top_10', methods=['GET'])
+def top_10():
+    return models.get_top_10()
+
+
+@app.route('/avg', methods=['GET'])
+def avg():
+    return models.get_average_file_size()
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     context = {"allowed": ', '.join(ALLOWED_EXTENSIONS)}
