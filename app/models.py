@@ -2,14 +2,10 @@ import datetime
 import itertools
 import json
 import math
-import pprint
-import statistics
-import time
-from datetime import datetime
-
-import pymongo
-from bson import SON
+from datetime import datetime, timedelta
 from bson.objectid import ObjectId
+from flask import jsonify
+
 from app import db
 
 
@@ -123,11 +119,36 @@ def get_top_10():
 
 
 def get_average_file_size():
-    from bson.json_util import dumps
     data = db.Files.aggregate([
         {"$group": {"_id": "_id", "AverageValue": {"$avg": "$file_size"}}}
     ])
     list_cur = list(data)
 
-    data  = convert_size(int(list_cur[0]['AverageValue']))
-    return {"AverageValue" : data}
+    data = convert_size(int(list_cur[0]['AverageValue']))
+    return {"AverageValue": data}
+
+
+def last_7_days_upload():
+    from bson.json_util import dumps
+    files = db.Files
+    week_before = datetime.now() - timedelta(days=6)
+    data = files.aggregate([
+        {
+            '$match': {
+                'created_at': {'$gt': week_before}
+            },
+        },
+        {
+            "$group": {
+                "_id": {
+                    "month": {"$month": "$created_at"},
+                    "day": {"$dayOfMonth": "$created_at"},
+                    "year": {"$year": "$created_at"}
+                },
+                "count": {"$sum": 1}
+            }
+        }
+
+    ])
+    data = json.loads(dumps(data))
+    return jsonify(data)
