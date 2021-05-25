@@ -2,18 +2,16 @@ import os
 import json
 import pandas as pd
 import plotly
-
 from logger import logger
 import models
 import plotly.express as px
 from datetime import datetime
-from redis import Redis
 from flask import render_template, request, redirect, session, flash
 from werkzeug.utils import secure_filename
 
 from main import app
 
-# redis = Redis(host='0.0.0.0', port=6379)
+
 uploads_dir = app.config['UPLOADED_AUDIOS_DEST']
 os.makedirs(uploads_dir, exist_ok=True)
 

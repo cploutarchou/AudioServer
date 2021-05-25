@@ -3,11 +3,9 @@ import itertools
 import json
 import math
 from datetime import datetime, timedelta
-from bson.objectid import ObjectId
 from mongoengine import ListField, StringField, DateTimeField, Document, IntField, errors
-
+from bson.json_util import dumps
 from logger import logger
-from main import db
 
 
 class Files(Document):
@@ -33,7 +31,7 @@ class Files(Document):
 
 class Batches(Document):
     created_at = DateTimeField(required=True, index=True)
-    files = ListField(required=True)
+    files = ListField(StringField(), required=True)
     updated_at = DateTimeField(required=True, index=False)
     meta = {
         "auto_create_index": True,
@@ -114,24 +112,17 @@ def insert_upload(batches: list = None):
 
 
 def get_upload_details(upload_id):
-    uploads = db.Uploads
-    batches = db.Batches
-    files = db.Files
-    res = uploads.find_one({"_id": ObjectId(upload_id)})
-
+    res = Uploads.objects(id=upload_id).first()
     data = []
     final_data = []
-    if res and "batches" in res:
-        for batch in res["batches"]:
-            res = batches.find_one({"_id": ObjectId(batch)})
-            if res and "files" in res:
-                data.append(res["files"])
+    if res and len(res.batches) > 0:
+        for batch in res.batches:
+            res = Batches.objects(id=batch).first()
+            if res and len(res.files) > 0:
+                data.append(res.files)
     data = list(itertools.chain(*data))
     for file in data:
-        print("File")
-        print(file)
-        res = files.find_one({"_id": ObjectId(file)})
-        print(res)
+        res = Files.objects(id=file).first()
         if res:
             item = dict(objectid=file, file=f"{res['title']}.{res['format_type']}")
             final_data.append(item)
@@ -140,17 +131,19 @@ def get_upload_details(upload_id):
 
 
 def get_file(file_id):
-    files = db.Files
-    res = files.find_one({"_id": ObjectId(file_id)})
-    res.pop("_id", None)
-    if res and "file_size" in res:
-        res['file_size'] = convert_size(res["file_size"])
-        if res['status'] == 1:
-            res['status'] = "active"
+    res = Files.objects(id=file_id).first()
+    data = {}
+    for key in res:
+        data[key] = res[key]
+    data.pop("id", None)
+    if data and "file_size" in data:
+        data['file_size'] = convert_size(data["file_size"])
+        if data['status'] == 1:
+            data['status'] = "active"
         else:
-            res['status'] = "deleted"
+            data['status'] = "deleted"
 
-    return json.dumps(res, default=str)
+    return json.dumps(data, default=str)
 
 
 def get_top_10():
@@ -184,7 +177,6 @@ def get_average_file_size():
 
 
 def last_7_days_upload():
-    from bson.json_util import dumps
     week_before = datetime.now() - timedelta(days=6)
 
     # '$match': {"$or": [
