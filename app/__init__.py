@@ -138,3 +138,10 @@ def index():
         return render_template('index.html', data=context)
     # return dropzone template on GET request
     return render_template('index.html', data=context)
+
+
+# app name
+@app.errorhandler(404)
+def not_found(e):
+    # defining function
+    return render_template("404.html", error=e)
