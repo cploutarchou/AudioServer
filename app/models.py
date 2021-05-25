@@ -99,7 +99,6 @@ def get_file(file_id):
 
 
 def get_top_10():
-    from bson.json_util import dumps
     data = db.Files.aggregate([
         {"$group": {
             "_id": {
@@ -112,9 +111,12 @@ def get_top_10():
             "_id": "$_id.format_type",
             "count": {"$mergeObjects": {"$arrayToObject": [[["$_id.format_type", "$count"]]]}}
         }},
-        {"$limit": 1}])
-
-    return dumps(list(data))
+        {"$limit": 10}])
+    final_data = {}
+    for i in data:
+        final_data[i['_id']] = i['count'][i['_id']]
+    sorted_items = {k: v for k, v in sorted(final_data.items(), key=lambda item: item[1],reverse=True)}
+    return sorted_items
 
 
 def get_average_file_size():

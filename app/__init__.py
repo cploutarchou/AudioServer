@@ -18,7 +18,7 @@ ALLOWED_EXTENSIONS = set(['mp3', 'wav', 'ogg'])
 
 client = MongoClient(port=27017, host='localhost')
 db = client['AudioServer']
-from app.models import *
+from .models import *
 
 
 def allowed_file(filename):
@@ -82,7 +82,12 @@ def chart():
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    context = {"allowed": ', '.join(ALLOWED_EXTENSIONS)}
+    context = {
+        "allowed": ', '.join(ALLOWED_EXTENSIONS),
+        "my_url": "https://christosploutarchou.com",
+        "copyright": f"© 2021 All rights reserved.",
+
+    }
     # set session for image results
     if "file_urls" not in session:
         session['file_urls'] = []
@@ -145,3 +150,11 @@ def index():
 def not_found(e):
     # defining function
     return render_template("404.html", error=e)
+
+
+@app.route("/stats")
+def stats():
+    context = {"top_10": get_top_10(),
+               "average_file_size": avg()['AverageValue']
+               }
+    return render_template('stats.html', data=context)
