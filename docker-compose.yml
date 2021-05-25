@@ -209,14 +209,6 @@ services:
     networks:
       audioserver-dev-env:
         ipv4_address: 172.21.0.25
-  redis:
-    image: redis
-    container_name: cache
-    networks:
-      audioserver-dev-env:
-        ipv4_address: 172.21.0.26
-    ports:
-      - 6379:6379
 
 volumes:
   mongo_cluster:
