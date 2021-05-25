@@ -4,8 +4,59 @@ import json
 import math
 from datetime import datetime, timedelta
 from bson.objectid import ObjectId
+from mongoengine import ListField, StringField, DateTimeField, Document, IntField, errors
 
-from app import db
+from logger import logger
+from main import db
+
+
+class Files(Document):
+    created_at = DateTimeField(required=True, index=True)
+    file_size = IntField(required=True, index=True)
+    format_type = StringField(required=True, index=True)
+    updated_at = DateTimeField(required=True, index=False)
+    status = IntField(default=1, index=True)
+    title = StringField(required=True, index=True)
+    meta = {
+        "auto_create_index": True,
+        "index_background": True,
+        "indexes": [
+            "created_at",
+            "file_size",
+            "format_type",
+            "updated_at",
+            "status",
+            "title",
+        ]
+    }
+
+
+class Batches(Document):
+    created_at = DateTimeField(required=True, index=True)
+    files = ListField(required=True)
+    updated_at = DateTimeField(required=True, index=False)
+    meta = {
+        "auto_create_index": True,
+        "index_background": True,
+        "indexes": [
+            "created_at",
+            "updated_at"
+        ]
+    }
+
+
+class Uploads(Document):
+    batches = ListField(required=True)
+    created_at = DateTimeField(required=True, index=True)
+    updated_at = DateTimeField(required=True, index=False)
+    meta = {
+        "auto_create_index": True,
+        "index_background": True,
+        "indexes": [
+            "created_at",
+            "updated_at"
+        ]
+    }
 
 
 def convert_size(size_bytes):
@@ -21,11 +72,18 @@ def convert_size(size_bytes):
 def insert_entry(data: dict):
     required_fields = ['format_type', 'title', 'file_size', 'updated_at', 'status']
     results = None
-    print(all(i.lower() in required_fields for i in data.keys()))
     if all(i.lower() in required_fields for i in data.keys()):
         data['created_at'] = datetime.now()
-        print(data)
-        results = db.Files.insert(data)
+        try:
+            results = Files(
+                created_at=data['created_at'], file_size=data['file_size'],
+                format_type=data['format_type'], title=data['title'],
+                updated_at=data['updated_at'], status=data['status'],
+            ).save()
+            results = results.id
+
+        except errors.SaveConditionError as e:
+            logger.error(f"Unable to save entry to db . Error {e}")
 
     return results
 
@@ -39,22 +97,20 @@ def chunks(lst, n):
 def insert_batch(file: list = None):
     insetred_batches = []
     if 0 < len(file) < 5000:
-        batches = {'created_at': datetime.now(), "updated_at": datetime.now(), "files": file}
-        batch_id = db.Batches.insert(batches)
-        insetred_batches.append(str(batch_id))
+        batch_id = Batches(created_at=datetime.now(), updated_at=datetime.now(), files=file).save()
+        insetred_batches.append(str(batch_id.id))
     else:
         ras = list(chunks(file, 5000))
         for i in ras:
-            batches = {'created_at': datetime.now(), "updated_at": datetime.now(), "files": i}
-            _id = db.Batches.insert(batches)
-            insetred_batches.append(str(_id))
+            _id = Batches(created_at=datetime.now(), updated_at=datetime.now(), files=i).save()
+            insetred_batches.append(str(_id.id))
+    print(insetred_batches)
     return insetred_batches
 
 
 def insert_upload(batches: list = None):
-    batches = {'created_at': datetime.now(), "updated_at": datetime.now(), "batches": batches}
-    batch_id = db.Uploads.insert(batches)
-    return str(batch_id)
+    batch_id = Uploads(created_at=datetime.now(), updated_at=datetime.now(), batches=batches).save()
+    return str(batch_id.id)
 
 
 def get_upload_details(upload_id):
@@ -92,14 +148,13 @@ def get_file(file_id):
         if res['status'] == 1:
             res['status'] = "active"
         else:
-            print("else")
             res['status'] = "deleted"
 
     return json.dumps(res, default=str)
 
 
 def get_top_10():
-    data = db.Files.aggregate([
+    pipeline = [
         {"$group": {
             "_id": {
                 "format_type": "$format_type"
@@ -111,34 +166,32 @@ def get_top_10():
             "_id": "$_id.format_type",
             "count": {"$mergeObjects": {"$arrayToObject": [[["$_id.format_type", "$count"]]]}}
         }},
-        {"$limit": 10}])
+        {"$limit": 10}]
+
+    data = Files.objects().aggregate(pipeline=pipeline)
+
     final_data = {}
     for i in data:
         final_data[i['_id']] = i['count'][i['_id']]
-    sorted_items = {k: v for k, v in sorted(final_data.items(), key=lambda item: item[1],reverse=True)}
+    sorted_items = {k: v for k, v in sorted(final_data.items(), key=lambda item: item[1], reverse=True)}
     return sorted_items
 
 
 def get_average_file_size():
-    data = db.Files.aggregate([
-        {"$group": {"_id": "_id", "AverageValue": {"$avg": "$file_size"}}}
-    ])
-    list_cur = list(data)
-
-    data = convert_size(int(list_cur[0]['AverageValue']))
+    data = Files.objects.average('file_size')
+    data = convert_size(int(data))
     return {"AverageValue": data}
 
 
 def last_7_days_upload():
     from bson.json_util import dumps
-    files = db.Files
     week_before = datetime.now() - timedelta(days=6)
 
     # '$match': {"$or": [
     #     {'created_at': {'$gt': week_before}},
     #     {'updated_at': {'$gt': week_before}
     #      }]},
-    data = files.aggregate([
+    data = Files.objects().aggregate([
         {
             '$match': {
                 'created_at': {'$gt': week_before}
