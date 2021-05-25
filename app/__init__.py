@@ -66,7 +66,7 @@ def last_7_days_upload():
 def chart():
     data = last_7_days_upload()
     df = pd.DataFrame(data['data'])
-    fig = px.bar(df, x='date', y='items',barmode='stack',
+    fig = px.bar(df, x='date', y='items', barmode='stack',
                  hover_data=['date', 'items'], color='date',
                  labels={'pop': 'population of Canada'}, height=350)
 

@@ -4,7 +4,6 @@ import json
 import math
 from datetime import datetime, timedelta
 from bson.objectid import ObjectId
-from flask import jsonify
 
 from app import db
 
@@ -132,6 +131,11 @@ def last_7_days_upload():
     from bson.json_util import dumps
     files = db.Files
     week_before = datetime.now() - timedelta(days=6)
+
+    # '$match': {"$or": [
+    #     {'created_at': {'$gt': week_before}},
+    #     {'updated_at': {'$gt': week_before}
+    #      }]},
     data = files.aggregate([
         {
             '$match': {
