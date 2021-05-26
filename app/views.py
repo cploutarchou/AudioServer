@@ -148,7 +148,7 @@ def stats():
     return render_template('stats.html', data=context, graphJSON=graphJSON, header=header, description=description)
 
 
-@app.errorhandler([404, 401, 401, 406, 408, 405, 500, 502, 503, 504, 505])
+@app.errorhandler(code_or_exception=404)
 def html_error(e):
     # defining function
     return render_template("error.html", error=e)
