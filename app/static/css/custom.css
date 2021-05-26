@@ -33,3 +33,13 @@
         transform: rotate(360deg);
     }
 }
+
+/*#########################*/
+.modal-full {
+    min-width: 20%;
+    margin-left: 80;
+}
+
+.modal-full .modal-content {
+    min-height: 100vh;
+}
