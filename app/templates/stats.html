@@ -7,21 +7,21 @@
     <meta name="description" content=""/>
     <meta name="author" content=""/>
     <title>Dashboard - SB Admin</title>
-    <link href="/static/css/style.css" rel="stylesheet"/>
+    <link href="/static/css/datatable.css" rel="stylesheet"/>
     <link href="/static/css/styles.css" rel="stylesheet"/>
     <script src="/static/js/all.min.js"></script>
 </head>
 <body class="sb-nav-fixed">
 <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
     <!-- Navbar Brand-->
-    <a class="navbar-brand ps-3" href="{{ url_for('index') }}">Start Bootstrap</a>
+    <a class="navbar-brand ps-3" href="{{ url_for('index') }}">{{ data.title }}</a>
 </nav>
 <div id="layoutSidenav">
     <div id="layoutSidenav_nav">
         <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
             <div class="sb-sidenav-menu">
                 <div class="nav">
-                    <div class="sb-sidenav-menu-heading">Core</div>
+                    <div class="sb-sidenav-menu-heading">Menu</div>
                     <a class="nav-link" href="{{ url_for('index') }}">
                         <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                         Dashboard
