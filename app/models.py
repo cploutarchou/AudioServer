@@ -3,6 +3,8 @@ import itertools
 import json
 import math
 from datetime import datetime, timedelta
+
+from flask import jsonify
 from mongoengine import ListField, StringField, DateTimeField, Document, IntField, errors
 from bson.json_util import dumps
 from logger import logger
@@ -71,7 +73,7 @@ def convert_size(size_bytes):
 
 
 def insert_entry(data: dict):
-    required_fields = ['format_type', 'title', 'file_size', 'updated_at', 'status','job_id']
+    required_fields = ['format_type', 'title', 'file_size', 'updated_at', 'status', 'job_id']
     results = None
     if all(i.lower() in required_fields for i in data.keys()):
         logger.info("Start creating mews entry to database")
@@ -121,7 +123,7 @@ def insert_upload(batches: list = None):
 def get_upload_details(upload_id):
     res = Uploads.objects(id=upload_id).first()
     data = []
-    final_data = []
+    final_data = {'data': []}
     if res and len(res.batches) > 0:
         for batch in res.batches:
             res = Batches.objects(id=batch).first()
@@ -131,10 +133,9 @@ def get_upload_details(upload_id):
     for file in data:
         res = Files.objects(id=file).first()
         if res:
-            item = dict(objectid=file, file=f"{res['title']}.{res['format_type']}")
-            final_data.append(item)
-
-    return json.dumps(final_data, default=str)
+            item = [file, f"{res['title']}.{res['format_type']}"]
+            final_data['data'].append(item)
+    return jsonify(final_data)
 
 
 def get_file(file_id):
