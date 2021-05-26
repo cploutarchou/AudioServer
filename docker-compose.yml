@@ -197,17 +197,17 @@ services:
     ports:
       - 27030:27017
 
-  #  flask-app:
-  #    build: .
-  #    ports:
-  #      - 80:80
-  #    volumes:
-  #      - .:/code
-  #    depends_on:
-  #      - router01
-  #    networks:
-  #      audioserver-dev-env:
-  #        ipv4_address: 172.21.0.25
+  flask-app:
+    build: .
+    ports:
+      - 80:80
+    volumes:
+      - .:/code
+    depends_on:
+      - router01
+    networks:
+      audioserver-dev-env:
+        ipv4_address: 172.21.0.25
   mongodb:
     image: mongo:4.4
     volumes:
