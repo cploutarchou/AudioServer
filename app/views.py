@@ -11,7 +11,6 @@ from werkzeug.utils import secure_filename
 
 from main import app
 
-
 uploads_dir = app.config['UPLOADED_AUDIOS_DEST']
 os.makedirs(uploads_dir, exist_ok=True)
 
@@ -136,7 +135,9 @@ def not_found(e):
 @app.route("/stats")
 def stats():
     context = {"top_10": models.get_top_10(),
-               "average_file_size": avg()['AverageValue']
+               "average_file_size": avg()['AverageValue'],
+               "total_files": models.Files.objects().count(),
+               "total_size": models.convert_size(models.Files.objects.sum('file_size'))
                }
     data = last_7_days_upload()
     df = pd.DataFrame(data['data'])

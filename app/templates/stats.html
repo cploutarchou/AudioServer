@@ -43,12 +43,34 @@
                     <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Dashboard</a></li>
                     <li class="breadcrumb-item active">Stats</li>
                 </ol>
-                <div class="col">
-                    <div class="card bg-primary text-white mb-4">
-                        <div class="card-body"><i class="fas fa-table me-1"></i> Average File Sizes</div>
-                        <div class="card col">
-                            <div class="card-body text-center">
-                                <h1 style="color: black">{{ data['average_file_size'] }}</h1>
+                <div class="row">
+                    <div class="col">
+                        <div class="card bg-primary text-white mb-4">
+                            <div class="card-body"><i class="fas fa-table me-1"></i> Average File Sizes</div>
+                            <div class="card col">
+                                <div class="card-body text-center">
+                                    <h1 style="color: black">{{ data['average_file_size'] }}</h1>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card bg-primary text-white mb-4">
+                            <div class="card-body"><i class="fas fa-table me-1"></i> Total No of audio files</div>
+                            <div class="card col">
+                                <div class="card-body text-center">
+                                    <h1 style="color: black">{{ data['total_files'] }}</h1>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card bg-primary text-white mb-4">
+                            <div class="card-body"><i class="fas fa-table me-1"></i> Disk Usage</div>
+                            <div class="card col">
+                                <div class="card-body text-center">
+                                    <h1 style="color: black">{{ data['total_size'] }}</h1>
+                                </div>
                             </div>
                         </div>
                     </div>
