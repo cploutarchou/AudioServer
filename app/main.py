@@ -19,5 +19,7 @@ from views import *
 
 if __name__ == "__main__":
     app.run(debug=True)
+    logger.info("Application Successfully Started from __main__")
 else:
     app.run(host='0.0.0.0')
+    logger.info("Application Successfully Started not from __main__")
