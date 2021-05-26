@@ -16,6 +16,7 @@ class Files(Document):
     updated_at = DateTimeField(required=True, index=False)
     status = IntField(default=1, index=True)
     title = StringField(required=True, index=True)
+    job_id = StringField(required=True, index=True)
     meta = {
         "auto_create_index": True,
         "index_background": True,
@@ -26,6 +27,7 @@ class Files(Document):
             "updated_at",
             "status",
             "title",
+            "job_id"
         ]
     }
 
@@ -69,7 +71,7 @@ def convert_size(size_bytes):
 
 
 def insert_entry(data: dict):
-    required_fields = ['format_type', 'title', 'file_size', 'updated_at', 'status']
+    required_fields = ['format_type', 'title', 'file_size', 'updated_at', 'status','job_id']
     results = None
     if all(i.lower() in required_fields for i in data.keys()):
         logger.info("Start creating mews entry to database")
@@ -81,6 +83,7 @@ def insert_entry(data: dict):
                 created_at=data['created_at'], file_size=data['file_size'],
                 format_type=data['format_type'], title=data['title'],
                 updated_at=data['updated_at'], status=data['status'],
+                job_id=data['job_id'],
             ).save()
             results = results.id
             logger.info("New entry successfully added to database")
