@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from mongoengine import ListField, StringField, DateTimeField, Document, IntField, errors
 from bson.json_util import dumps
 from logger import logger
+from main import app
 
 
 class Files(Document):
@@ -71,7 +72,10 @@ def insert_entry(data: dict):
     required_fields = ['format_type', 'title', 'file_size', 'updated_at', 'status']
     results = None
     if all(i.lower() in required_fields for i in data.keys()):
+        logger.info("Start creating mews entry to database")
         data['created_at'] = datetime.now()
+        if app.debug is not False:
+            logger.info(f"Entry data : {data}")
         try:
             results = Files(
                 created_at=data['created_at'], file_size=data['file_size'],
@@ -79,7 +83,7 @@ def insert_entry(data: dict):
                 updated_at=data['updated_at'], status=data['status'],
             ).save()
             results = results.id
-
+            logger.info("New entry successfully added to database")
         except errors.SaveConditionError as e:
             logger.error(f"Unable to save entry to db . Error {e}")
 
@@ -93,17 +97,17 @@ def chunks(lst, n):
 
 
 def insert_batch(file: list = None):
-    insetred_batches = []
+    inserted_batches = []
     if 0 < len(file) < 5000:
         batch_id = Batches(created_at=datetime.now(), updated_at=datetime.now(), files=file).save()
-        insetred_batches.append(str(batch_id.id))
+        inserted_batches.append(str(batch_id.id))
     else:
         ras = list(chunks(file, 5000))
         for i in ras:
             _id = Batches(created_at=datetime.now(), updated_at=datetime.now(), files=i).save()
-            insetred_batches.append(str(_id.id))
-    print(insetred_batches)
-    return insetred_batches
+            inserted_batches.append(str(_id.id))
+    print(inserted_batches)
+    return inserted_batches
 
 
 def insert_upload(batches: list = None):
