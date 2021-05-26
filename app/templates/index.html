@@ -7,21 +7,23 @@
     <meta name="description" content=""/>
     <meta name="author" content=""/>
     <title>Dashboard - SB Admin</title>
-    <link href="/static/css/style.css" rel="stylesheet"/>
+    <link href="/static/css/datatable.css" rel="stylesheet"/>
     <link href="/static/css/styles.css" rel="stylesheet"/>
+    <link href="/static/css/custom.css" rel="stylesheet"/>
     <script src="/static/js/all.min.js"></script>
 </head>
 <body class="sb-nav-fixed">
 <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
     <!-- Navbar Brand-->
-    <a class="navbar-brand ps-3" href="{{ url_for('index') }}">Start Bootstrap</a>
+    <a class="navbar-brand ps-3" href="{{ url_for('index') }}">{{ data.title }}</a>
 </nav>
+<div id="loader" class="loader"></div>
 <div id="layoutSidenav">
     <div id="layoutSidenav_nav">
         <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
             <div class="sb-sidenav-menu">
                 <div class="nav">
-                    <div class="sb-sidenav-menu-heading">Core</div>
+                    <div class="sb-sidenav-menu-heading">Menu</div>
                     <a class="nav-link" href="{{ url_for('index') }}">
                         <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                         Dashboard
@@ -86,33 +88,16 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="row">
                     <div class="col-xl-12">
                         <div class="card mb-12">
                             <div id="wrapper">
                                 <div id="page-wrapper">
 
-                                    <p>
-                                        {% with messages = get_flashed_messages() %}
-                                            {% if messages %}
-                                                {% for message in messages %}
-                                                    {% if message.category == 'error' %}
-                                                        <div class="alert alert-danger">
-                                                            <strong>{{ message }}</strong>
-                                                        </div>
-                                                    {% else %}
-                                                        <div class="alert alert-success">
-                                                            <strong>{{ message }}</strong>
-                                                            {% if data.uploaded_id %}
-                                                                <br>
-                                                                <strong>Upload ID : {{ data.uploaded_id }}</strong>
-                                                            {% endif %}
-                                                        </div>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            {% endif %}
-                                        {% endwith %}
-                                    </p>
+                                    <div id="upload_id" class="alert alert-success" role="alert" style="display:none">
+                                    </div>
+
                                     <div class="mainbox " id="identitycard" style="margin-top:50px">
                                         <div class="panel panel-info">
                                             <div class="panel-heading text-center">
@@ -126,23 +111,22 @@
                                                     </div>
                                                 </div>
                                                 <div class="row" style="padding: 10px 15px 9px;">
-                                                    <form action="/" enctype="multipart/form-data" method="post">
-                                                        <div class="form-group">
+                                                    <form id='file-catcher'>
+                                                        <div class=" justify-content-center">
+                                                            <input id='file-input' type='file'
+                                                                   class="form-control form-control-lg" multiple/>
                                                             <div class="row " style="margin-bottom: 20px;">
-                                                                <div class="d-flex justify-content-center">
-                                                                    <input autocomplete="off" multiple="true"
-                                                                           name="files[]" type="file">
-                                                                </div>
-                                                            </div>
-                                                            <div class="row text-center"
-                                                                 style="padding-left: 20px;padding-right: 20px;">
-                                                                <input class="btn btn-lg btn-block btn-success"
-                                                                       style="border-radius: 50px;background-color:hover: #35832f;"
-                                                                       type="submit"
-                                                                       value="Submit">
+                                                                <button type='submit'
+                                                                        class="btn btn-lg btn-block btn-success"
+                                                                        style="margin-top:50px">
+                                                                    Submit
+                                                                </button>
                                                             </div>
                                                         </div>
+
                                                     </form>
+
+                                                    <div id='file-list-display'></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -173,5 +157,141 @@
 </div>
 <script src="/static/js/bootstrap.bundle.min.js"></script>
 <script src="/static/js/scripts.js"></script>
+<script src="/static/js/sweetalert.min.js"></script>
+<script type="text/javascript">
+    (function () {
+
+            let generateUUID = () => {
+                let d = new Date().getTime();//Timestamp
+                let d2 = (performance && performance.now && (performance.now() * 1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                    let r = Math.random() * 16;//random number between 0 and 16
+                    if (d > 0) {//Use timestamp until depleted
+                        r = (d + r) % 16 | 0;
+                        d = Math.floor(d / 16);
+                    } else {//Use microseconds since page-load if supported
+                        r = (d2 + r) % 16 | 0;
+                        d2 = Math.floor(d2 / 16);
+                    }
+                    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                });
+            }
+
+            const job_uuid = generateUUID()
+            {#console.log(job_uuid)#}
+
+            let loader = (enable) => {
+                let loader_div = document.getElementById("loader");
+                if (enable === true) {
+                    loader_div.style.display = "block"
+                } else {
+                    loader_div.style.display = "none"
+                }
+
+            }
+
+            let fileCatcher = document.getElementById('file-catcher');
+            let fileInput = document.getElementById('file-input');
+            let fileListDisplay = document.getElementById('file-list-display');
+
+            let fileList = [];
+            let renderFileList, sendFile;
+
+            fileCatcher.addEventListener('submit', function (e) {
+                e.preventDefault();
+                loader(true)
+                fileList.forEach(function (file) {
+                    sendFile(file);
+                });
+            });
+
+            fileInput.addEventListener('change', function (e) {
+                fileList = [];
+                for (let i = 0; i < fileInput.files.length; i++) {
+                    fileList.push(fileInput.files[i]);
+                }
+                renderFileList();
+            });
+
+            renderFileList = function () {
+
+                fileListDisplay.innerHTML = '';
+                fileList.forEach(function (file, index) {
+                    let fileDisplayEl = document.createElement('div');
+                    fileDisplayEl.setAttribute("id", "file_id_" + index)
+                    fileDisplayEl.setAttribute("class", "alert alert-warning alert-dismissible fade show role='alert'")
+                    const btn = "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>";
+                    fileDisplayEl.innerHTML = (index + 1) + ': ' + file.name + btn;
+                    fileListDisplay.appendChild(fileDisplayEl);
+                });
+            };
+            let item_counter = 0;
+            let completed = 0
+            let failed = 0
+            let create_batch = (job_id) => {
+
+                let formData = new FormData();
+                let request = new XMLHttpRequest();
+                formData.set('uuid', job_id);
+                request.open("POST", 'http://127.0.0.1:5000/create_batch');
+                request.responseType = 'json';
+                request.send(formData);
+                request.onload = () => {
+                    if (request.status !== 200) { // analyze HTTP status of the response
+                        item_counter += 1
+                        failed += 1
+                    } else {
+                        if (request.response['code'] === 200) {
+                            swal("Good job!", request.response['msg'], "success");
+                            let upload_id_div = document.getElementById("upload_id")
+                            upload_id_div.innerHTML = 'Upload ID :' +
+                                '<a href="#" class="alert-link">' + request.response['upload_id'] + '</a>.'
+                            upload_id_div.style.display = ""
+                        } else {
+                            swal("Something went wrong!", request.response['msg'], "error");
+                        }
+                    }
+
+                }
+            }
+
+            sendFile = function (file) {
+                let total_items = fileList.length;
+                let formData = new FormData();
+                let request = new XMLHttpRequest();
+                request.responseType = 'json';
+
+                formData.set('file', file);
+                formData.set('total_items', total_items);
+                formData.set('uuid', job_uuid);
+                request.open("POST", 'http://127.0.0.1:5000/upload', true);
+                request.send(formData);
+                request.onload = () => {
+                    if (request.status !== 200) { // analyze HTTP status of the response
+                        item_counter += 1
+                        failed += 1
+                    } else {
+                        loader(false)
+                        let item = document.getElementById("file_id_" + item_counter)
+                        item.setAttribute("class", "alert alert-success alert-dismissible fade show role='alert'")
+                        item_counter += 1
+                        completed += 1
+                        {#alert(`Done, got ${request.response.length} bytes`); // response is the server response#}
+                    }
+                    if (failed + completed === total_items) {
+                        create_batch(job_uuid)
+                    }
+
+                    request.onerror = () => {
+                        alert("Request failed");
+                    }
+
+
+                };
+            }
+        }
+    )();
+
+</script>
 </body>
 </html>
