@@ -125,13 +125,6 @@ def index():
     return render_template('index.html', data=context)
 
 
-# app name
-@app.errorhandler(404)
-def not_found(e):
-    # defining function
-    return render_template("404.html", error=e)
-
-
 @app.route("/stats")
 def stats():
     context = {"top_10": models.get_top_10(),
@@ -153,3 +146,9 @@ def stats():
 
         """
     return render_template('stats.html', data=context, graphJSON=graphJSON, header=header, description=description)
+
+
+@app.errorhandler([404, 401, 401, 406, 408, 405, 500, 502, 503, 504, 505])
+def html_error(e):
+    # defining function
+    return render_template("error.html", error=e)
