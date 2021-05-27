@@ -139,19 +139,15 @@ def get_upload_details(upload_id):
 
 
 def get_file(file_id):
-    res = Files.objects(id=file_id).first()
+    res = Files.objects(id=file_id, status=1).first()
     data = {}
     for key in res:
         data[key] = res[key]
     data.pop("id", None)
     if data and "file_size" in data:
         data['file_size'] = convert_size(data["file_size"])
-        if data['status'] == 1:
-            data['status'] = "active"
-        else:
-            data['status'] = "deleted"
 
-    return json.dumps(data, default=str)
+    return jsonify({"data": data})
 
 
 def get_top_10():
