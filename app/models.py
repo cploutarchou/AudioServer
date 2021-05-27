@@ -4,11 +4,13 @@ import json
 import math
 from datetime import datetime, timedelta
 
+import flask
 from flask import jsonify
 from mongoengine import ListField, StringField, DateTimeField, Document, IntField, errors
 from bson.json_util import dumps
 from logger import logger
 from main import app
+from mongoengine.errors import ValidationError, LookUpError, SaveConditionError
 
 
 class Files(Document):
@@ -91,6 +93,7 @@ def insert_entry(data: dict):
             logger.info("New entry successfully added to database")
         except errors.SaveConditionError as e:
             logger.error(f"Unable to save entry to db . Error {e}")
+            raise e
 
     return results
 
@@ -102,52 +105,64 @@ def chunks(lst, n):
 
 
 def insert_batch(file: list = None):
-    inserted_batches = []
-    if 0 < len(file) < 5000:
-        batch_id = Batches(created_at=datetime.now(), updated_at=datetime.now(), files=file).save()
-        inserted_batches.append(str(batch_id.id))
-    else:
-        ras = list(chunks(file, 5000))
-        for i in ras:
-            _id = Batches(created_at=datetime.now(), updated_at=datetime.now(), files=i).save()
-            inserted_batches.append(str(_id.id))
-    print(inserted_batches)
-    return inserted_batches
+    try:
+        inserted_batches = []
+        if 0 < len(file) < 5000:
+            batch_id = Batches(created_at=datetime.now(), updated_at=datetime.now(), files=file).save()
+            inserted_batches.append(str(batch_id.id))
+        else:
+            ras = list(chunks(file, 5000))
+            for i in ras:
+                _id = Batches(created_at=datetime.now(), updated_at=datetime.now(), files=i).save()
+                inserted_batches.append(str(_id.id))
+        return inserted_batches
+    except SaveConditionError as error:
+        raise error
 
 
 def insert_upload(batches: list = None):
-    batch_id = Uploads(created_at=datetime.now(), updated_at=datetime.now(), batches=batches).save()
-    return str(batch_id.id)
+    try:
+        batch_id = Uploads(created_at=datetime.now(), updated_at=datetime.now(), batches=batches).save()
+        return str(batch_id.id)
+    except SaveConditionError as error:
+        raise error
 
 
 def get_upload_details(upload_id):
-    res = Uploads.objects(id=upload_id).first()
-    data = []
-    final_data = {'data': []}
-    if res and len(res.batches) > 0:
-        for batch in res.batches:
-            res = Batches.objects(id=batch).first()
-            if res and len(res.files) > 0:
-                data.append(res.files)
-    data = list(itertools.chain(*data))
-    for file in data:
-        res = Files.objects(id=file).first()
-        if res:
-            item = [file, f"{res['title']}.{res['format_type']}"]
-            final_data['data'].append(item)
-    return jsonify(final_data)
+    try:
+        res = Uploads.objects(id=upload_id).first()
+        data = []
+        final_data = {'data': []}
+        if res and len(res.batches) > 0:
+            for batch in res.batches:
+                res = Batches.objects(id=batch).first()
+                if res and len(res.files) > 0:
+                    data.append(res.files)
+        data = list(itertools.chain(*data))
+        for file in data:
+            res = Files.objects(id=file).first()
+            if res:
+                item = [file, f"{res['title']}.{res['format_type']}"]
+                final_data['data'].append(item)
+        return flask.Response(status=200, response=json.dumps(final_data))
+    except ValidationError as e:
+        return flask.Response(status=201, response=e.message)
 
 
 def get_file(file_id):
-    res = Files.objects(id=file_id, status=1).first()
-    data = {}
-    for key in res:
-        data[key] = res[key]
-    data.pop("id", None)
-    if data and "file_size" in data:
-        data['file_size'] = convert_size(data["file_size"])
-
-    return jsonify({"data": data})
+    try:
+        res = Files.objects(id=file_id, status=1).first()
+        data = {}
+        if res and len(res) > 0:
+            for key in res:
+                data[key] = res[key]
+            data.pop("id", None)
+            data['file_size'] = convert_size(data["file_size"])
+            data['created_at'] = data['created_at'].strftime("%d-%m-%Y, %H:%M:%S")
+            data['updated_at'] = data['updated_at'].strftime("%d-%m-%Y, %H:%M:%S")
+        return flask.Response(status=200, response=json.dumps(data))
+    except ValidationError as e:
+        return flask.Response(status=201, response=e.message)
 
 
 def get_top_10():

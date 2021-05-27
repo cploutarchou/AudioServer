@@ -67,26 +67,6 @@
                                 </tr>
                                 </tfoot>
                             </table>
-                            <table id="upload_id_tbl" class="display" width="100% ">
-                                <thead>
-                                <tr>
-                                    <th>Object ID</th>
-                                    <th>Created_at</th>
-                                    <th>Format_type</th>
-                                    <th>Title</th>
-
-                                </tr>
-                                </thead>
-                                <tfoot>
-                                <tr>
-                                    <th>Object ID</th>
-                                    <th>Created_at</th>
-                                    <th>Format_type</th>
-                                    <th>Title</th>
-
-                                </tr>
-                                </tfoot>
-                            </table>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -147,7 +127,7 @@
                                 <form id="find_upload" class="row g-3">
                                     <div class="col-auto">
                                         <label for="upload_id_input" class="visually-hidden">Upload ID</label>
-                                        <input type="text" class="form-control" id="upload_id_input"
+                                        <input type="text" class="form-control" id="upload_id_input" required
                                                placeholder="Upload ID">
                                     </div>
                                     <div class="col-auto">
@@ -330,63 +310,55 @@
             let item_counter = 0;
             let completed = 0
             let failed = 0
+
             let create_batch = (job_id) => {
 
                 let formData = new FormData();
                 let request = new XMLHttpRequest();
+                const url = window.location.href + 'create_batch'
                 formData.set('uuid', job_id);
-                request.open("POST", window.location.href + 'create_batch');
-                request.responseType = 'json';
+                request.open("POST", url);
                 request.send(formData);
                 request.onload = () => {
                     if (request.status !== 200) { // analyze HTTP status of the response
                         item_counter += 1
                         failed += 1
                     } else {
-                        if (request.response['code'] === 200) {
-                            loader(false)
-                            swal("Good job!", request.response['msg'], "success");
-                            let upload_id_div = document.getElementById("upload_id")
-                            upload_id_div.innerHTML = 'Upload ID :' +
-                                '<a href="#" class="alert-link">' + request.response['upload_id'] + '</a>.'
-                            upload_id_div.style.display = ""
-                        } else {
-                            swal("Something went wrong!", request.response['msg'], "error");
-                        }
+                        loader(false)
+                        swal("Good job!", request.response, "success");
+                        let upload_id_div = document.getElementById("upload_id")
+                        upload_id_div.innerHTML = 'Upload ID :' +
+                            '<a href="#" class="alert-link">' + request.response + '</a>.'
+                        upload_id_div.style.display = ""
                     }
-
                 }
             }
+
 
             sendFile = function (file) {
                 let total_items = fileList.length;
                 let formData = new FormData();
                 let request = new XMLHttpRequest();
+                const url = window.location.href + 'upload'
                 formData.set('file', file);
                 formData.set('total_items', total_items);
                 formData.set('uuid', job_uuid);
-                request.open("POST", window.location.href + 'upload', true);
-                request.responseType = 'json';
+                request.open("POST", url, true);
                 if (formData) {
                     request.send(formData);
                 }
                 request.onload = () => {
-                    if (request.status !== 200) { // analyze HTTP status of the response
+                    if (request.status !== 200) {
                         item_counter += 1
                         failed += 1
                     } else {
-
                         let item = document.getElementById("file_id_" + item_counter)
                         item.setAttribute("class", "alert alert-success alert-dismissible fade show role='alert'")
                         item_counter += 1
                         completed += 1
-                        {#alert(`Done, got ${request.response.length} bytes`); // response is the server response#}
                     }
                     if (failed + completed === total_items) {
                         create_batch(job_uuid)
-                    }
-                    request.onerror = () => {
-                        alert("Request failed");
                     }
                 };
             }
@@ -395,70 +367,74 @@
 
                 const upload_id = document.getElementById("upload_id_input").value
                 let request = new XMLHttpRequest();
-                request.responseType = 'json';
-                request.open("GET", window.location.href + 'find/' + upload_id, true);
+                {#request.responseType = 'json';#}
+                request.open("GET", window.location.href + 'find/' + upload_id);
                 request.send();
                 request.onload = () => {
                     if (request.status !== 200) { // analyze HTTP status of the response
                         loader(false)
-                        console.log("Error")
+                        swal("Something going wrong!", `No valid Upload ID : ${upload_id}`, "error");
                     } else {
                         loader(false)
-                        if (request.response['data']) {
-                            const data = request.response['data']
-                            $('#upload_id_tbl').DataTable({
-                                data: data,
-                                retrieve: true,
-                                columns: [
-                                    {title: "Object ID"},
-                                    {title: "File"},
-                                ]
-                            });
-                        }
-                        modal.show()
+                        if (request.response !== "") {
+                            const data = JSON.parse(request.response)['data']
 
+                            if (data.length > 0) {
+                                $('#upload_id_tbl').DataTable({
+                                    data: data,
+                                    retrieve: true,
+                                    columns: [
+                                        {title: "Object ID"},
+                                        {title: "File"},
+                                    ]
+                                });
+                            }
+                            modal.show()
+                        } else {
+                            swal("Something going wrong!", `Unable to fetch data for upload id : ${upload_id}`, "error");
+                        }
                     }
-                    request.onerror = () => {
-                        loader(false)
-                        alert("Request failed");
-                        alert("Request failed");
-                    }
-                };
-            }
+
+                }
+                request.onerror = () => {
+                    loader(false)
+                    alert("Request failed");
+                    alert("Request failed");
+                }
+            };
+
             let find_by_object_id = (file_id) => {
 
-
                 let request = new XMLHttpRequest();
-                request.responseType = 'json';
-                request.open("GET", window.location.href + 'file/' + file_id, true);
+                const url = window.location.href + 'file/' + file_id
+                request.open("GET", url);
                 request.send();
+
                 request.onload = () => {
                     if (request.status !== 200) { // analyze HTTP status of the response
                         loader(false)
-                        console.log("Error")
+                        swal("Something going wrong!", `No valid Object ID : ${file_id}`, "error");
                     } else {
                         loader(false)
-                        if (request.response['data']) {
-                            const data = request.response['data']
+                        console.log(request.response)
+                        if (request.response !== "") {
+                            const data = JSON.parse(request.response)
                             console.log(data)
-
                             document.getElementById("modal_file_title").innerText = "File Details for Object id : " + file_id
                             document.getElementById("object_title").innerText = data['title']
                             document.getElementById("object_format").innerText = data['format_type']
                             document.getElementById("object_file_size").innerText = data['file_size']
-                            document.getElementById("object_created").innerText = data['created_at']
-
+                            document.getElementById("object_created").innerText = data['created_at'].toString()
                             file_details.show()
-
-                        }
-                        request.onerror = () => {
-                            loader(false)
-                            alert("Request failed");
+                        } else {
+                            swal("Something going wrong!", request.response, "error");
                         }
                     }
 
                 }
             }
+
+
             let find_upload = document.getElementById('find_upload');
             let find_object = document.getElementById('find_object');
             find_upload.addEventListener('submit', function (e) {
@@ -472,7 +448,6 @@
                 loader(true)
                 let file = document.getElementById("file_object_id")
                 let file_id = file.value
-                console.log("File id: " + file_id)
                 if (file_id !== "") {
                     find_by_object_id(file_id)
                     file.value = ""

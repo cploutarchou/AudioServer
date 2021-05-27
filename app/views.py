@@ -1,7 +1,12 @@
 import os
 import json
+
+import flask
+import mongoengine
 import pandas as pd
 import plotly
+from mongoengine.errors import ValidationError, LookUpError, SaveConditionError
+
 from logger import logger
 import models
 import plotly.express as px
@@ -34,12 +39,7 @@ def find(id=None):
 
 @app.route('/file/<id>', methods=['GET'])
 def get_file(id):
-    if id is None:
-        return {
-            'status_code': 400,
-            'status_msg': 'Bad Request',
-            'description': "Post id is required."
-        }
+    print(id)
     return models.get_file(id)
 
 
@@ -102,6 +102,7 @@ def upload():
             os.path.getsize(app.config['UPLOADED_AUDIOS_DEST'] + "/" + filename)
             size = os.path.getsize(app.config['UPLOADED_AUDIOS_DEST'] + "/" + filename)
             name, format_type = filename.split('.')
+            file.close()
             data = {
                 "format_type": format_type,
                 'title': name,
@@ -124,24 +125,34 @@ def upload():
 @app.route("/create_batch", methods=['POST'])
 def create_batch():
     job_uuid = None
-    return_response = None
+    entry_files = None
+    return_response = flask.Response(status=500, response="Something going wrong. Please try again.")
     if request.method == 'POST':
         if "uuid" in request.form:
             job_uuid = request.form['uuid']
         if job_uuid is not None:
-            entry_files = models.Files.objects(job_id=job_uuid)
-            if len(entry_files) == 0:
-                return_response = jsonify(dict(code=201, msg="No files found"))
+            try:
+                entry_files = models.Files.objects(job_id=job_uuid)
+                if len(entry_files) == 0:
+                    return_response = flask.Response(status=409, response="No files found")
+            except ValidationError as e:
+                return_response = flask.Response(status=409, response=e.message)
+
             files = []
             for file in entry_files:
                 files.append(str(file.id))
             if len(files) > 0:
-                inserted_batches = models.insert_batch(files)
-                if inserted_batches and len(inserted_batches) > 0:
-                    res = models.insert_upload(inserted_batches)
-                    if res is not None:
-                        return_response = jsonify(
-                            dict(code=200, msg="File upload completed successfully", upload_id=str(res)))
+                try:
+                    inserted_batches = models.insert_batch(files)
+                    if inserted_batches and len(inserted_batches) > 0:
+                        try:
+                            res = models.insert_upload(inserted_batches)
+                            if res is not None:
+                                return_response = flask.Response(status=200, response=str(res))
+                        except SaveConditionError as e:
+                            return_response = flask.Response(status=409, response=f"{e}")
+                except SaveConditionError as e:
+                    return_response = flask.Response(status=409, response=f"{e}")
     return return_response
 
 
