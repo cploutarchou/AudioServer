@@ -142,7 +142,7 @@ def get_upload_details(upload_id):
         for file in data:
             res = Files.objects(id=file).first()
             if res:
-                item = [file, f"{res['title']}.{res['format_type']}"]
+                item = [file, f"{res['title']}.{res['format_type']}", f"{file}/play", f"{file}/download"]
                 final_data['data'].append(item)
         return flask.Response(status=200, response=json.dumps(final_data))
     except ValidationError as e:
