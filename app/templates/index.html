@@ -56,6 +56,8 @@
                                 <tr>
                                     <th>Object ID</th>
                                     <th>File</th>
+                                    <th>Play</th>
+                                    <th>Download</th>
 
                                 </tr>
                                 </thead>
@@ -63,9 +65,19 @@
                                 <tr>
                                     <th>Object ID</th>
                                     <th>File</th>
+                                    <th>Play</th>
+                                    <th>Download</th>
 
                                 </tr>
                                 </tfoot>
+                                <tbody>
+                                <tr class="odd">
+                                    <td id="object_id"></td>
+                                    <td id="filename"></td>
+                                    <td id="play"></td>
+                                    <td id="download"></td>
+                                </tr>
+                                </tbody>
                             </table>
                         </div>
                         <div class="modal-footer">
@@ -186,19 +198,36 @@
                                                     </div>
                                                 </div>
                                                 <div class="row" style="padding: 10px 15px 9px;">
-                                                    <form id='file-catcher'>
+                                                    <form id='upload'>
+                                                        <div class=" justify-content-center container">
+                                                            <div id="dropbox"
+                                                                 class="rounded border border-2 bg-light bg-gradient w-auto p-3  text-lg-center"
+                                                                 style="height:100px">
+                                                                Drag and Drop Files Here
+                                                            </div>
+                                                        </div>
+                                                        <br>
                                                         <div class=" justify-content-center">
-                                                            <input id='file-input' type='file'
-                                                                   class="form-control form-control-lg" multiple/>
+                                                            <input id="file-input" type="file" name="files[]"
+                                                                   accept="audio/*" class="form-control form-control-lg"
+                                                                   multiple enctype="multipart/form-data">
                                                             <div class="row " style="margin-bottom: 20px;">
+
                                                                 <button type='submit'
                                                                         class="btn btn-lg btn-block btn-success"
-                                                                        style="margin-top:50px">
+                                                                        style="margin-top:50px" id="upload-button">
                                                                     Submit
                                                                 </button>
                                                             </div>
                                                         </div>
 
+                                                        <fieldset id="progress" style="display: none">
+                                                            <legend>Files Progress</legend>
+
+                                                            <div class="progress-trough">
+                                                                <div id="progress-bar" class="progress-bar">0%</div>
+                                                            </div>
+                                                        </fieldset>
                                                     </form>
 
                                                     <div id='file-list-display'></div>
@@ -233,229 +262,10 @@
 
 
 <script src="/static/js/bootstrap.bundle.js"></script>
-<script src="/static/js/jquery-3.5.1.slim.min.js"></script>
+<script src="/static/js/jquery-3.6.0.min.js"></script>
 <script src="/static/js/jquery.dataTables.min.js" type="text/javascript"></script>
 <script src="/static/js/sweetalert.min.js"></script>
 <script src="/static/js/scripts.js"></script>
-<script type="text/javascript">
-    (function () {
-            let mymodal = document.getElementById("modal")
-            let file_details_modal = document.getElementById("modal_file")
-            let modal = new bootstrap.Modal(mymodal)
-            let file_details = new bootstrap.Modal(file_details_modal)
-            let generateUUID = () => {
-                let d = new Date().getTime();//Timestamp
-                let d2 = (performance && performance.now && (performance.now() * 1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
-                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                    let r = Math.random() * 16;//random number between 0 and 16
-                    if (d > 0) {//Use timestamp until depleted
-                        r = (d + r) % 16 | 0;
-                        d = Math.floor(d / 16);
-                    } else {//Use microseconds since page-load if supported
-                        r = (d2 + r) % 16 | 0;
-                        d2 = Math.floor(d2 / 16);
-                    }
-                    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-                });
-            }
-
-            const job_uuid = generateUUID()
-
-            let loader = (enable) => {
-                let loader_div = document.getElementById("loader");
-                if (enable === true) {
-                    loader_div.style.display = "block"
-                } else {
-                    loader_div.style.display = "none"
-                }
-
-            }
-
-            let fileCatcher = document.getElementById('file-catcher');
-            let fileInput = document.getElementById('file-input');
-            let fileListDisplay = document.getElementById('file-list-display');
-
-            let fileList = [];
-            let renderFileList, sendFile;
-
-
-            fileCatcher.addEventListener('submit', function (e) {
-                e.preventDefault();
-                loader(true)
-                fileList.forEach(function (file) {
-                    sendFile(file)
-                });
-            });
-
-            fileInput.addEventListener('change', function (e) {
-                fileList = [];
-                for (let i = 0; i < fileInput.files.length; i++) {
-                    fileList.push(fileInput.files[i]);
-                }
-                renderFileList();
-            });
-
-            renderFileList = function () {
-
-                fileListDisplay.innerHTML = '';
-                fileList.forEach(function (file, index) {
-                    let fileDisplayEl = document.createElement('div');
-                    fileDisplayEl.setAttribute("id", "file_id_" + index)
-                    fileDisplayEl.setAttribute("class", "alert alert-warning alert-dismissible fade show role='alert'")
-                    const btn = "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>";
-                    fileDisplayEl.innerHTML = (index + 1) + ': ' + file.name + btn;
-                    fileListDisplay.appendChild(fileDisplayEl);
-                });
-            };
-            let item_counter = 0;
-            let completed = 0
-            let failed = 0
-
-            let create_batch = (job_id) => {
-
-                let formData = new FormData();
-                let request = new XMLHttpRequest();
-                const url = window.location.href + 'create_batch'
-                formData.set('uuid', job_id);
-                request.open("POST", url);
-                request.send(formData);
-                request.onload = () => {
-                    if (request.status !== 200) { // analyze HTTP status of the response
-                        item_counter += 1
-                        failed += 1
-                    } else {
-                        loader(false)
-                        swal("Good job!", request.response, "success");
-                        let upload_id_div = document.getElementById("upload_id")
-                        upload_id_div.innerHTML = 'Upload ID :' +
-                            '<a href="#" class="alert-link">' + request.response + '</a>.'
-                        upload_id_div.style.display = ""
-                    }
-                }
-            }
-
-
-            sendFile = function (file) {
-                let total_items = fileList.length;
-                let formData = new FormData();
-                let request = new XMLHttpRequest();
-                const url = window.location.href + 'upload'
-                formData.set('file', file);
-                formData.set('total_items', total_items);
-                formData.set('uuid', job_uuid);
-                request.open("POST", url, true);
-                if (formData) {
-                    request.send(formData);
-                }
-                request.onload = () => {
-                    if (request.status !== 200) {
-                        item_counter += 1
-                        failed += 1
-                    } else {
-                        let item = document.getElementById("file_id_" + item_counter)
-                        item.setAttribute("class", "alert alert-success alert-dismissible fade show role='alert'")
-                        item_counter += 1
-                        completed += 1
-                    }
-                    if (failed + completed === total_items) {
-                        create_batch(job_uuid)
-                    }
-                };
-            }
-
-            let get_files_by_upload_id = () => {
-
-                const upload_id = document.getElementById("upload_id_input").value
-                let request = new XMLHttpRequest();
-                {#request.responseType = 'json';#}
-                request.open("GET", window.location.href + 'find/' + upload_id);
-                request.send();
-                request.onload = () => {
-                    if (request.status !== 200) { // analyze HTTP status of the response
-                        loader(false)
-                        swal("Something going wrong!", `No valid Upload ID : ${upload_id}`, "error");
-                    } else {
-                        loader(false)
-                        if (request.response !== "") {
-                            const data = JSON.parse(request.response)['data']
-
-                            if (data.length > 0) {
-                                $('#upload_id_tbl').DataTable({
-                                    data: data,
-                                    retrieve: true,
-                                    columns: [
-                                        {title: "Object ID"},
-                                        {title: "File"},
-                                    ]
-                                });
-                            }
-                            modal.show()
-                        } else {
-                            swal("Something going wrong!", `Unable to fetch data for upload id : ${upload_id}`, "error");
-                        }
-                    }
-
-                }
-                request.onerror = () => {
-                    loader(false)
-                    alert("Request failed");
-                    alert("Request failed");
-                }
-            };
-
-            let find_by_object_id = (file_id) => {
-
-                let request = new XMLHttpRequest();
-                const url = window.location.href + 'file/' + file_id
-                request.open("GET", url);
-                request.send();
-
-                request.onload = () => {
-                    if (request.status !== 200) { // analyze HTTP status of the response
-                        loader(false)
-                        swal("Something going wrong!", `No valid Object ID : ${file_id}`, "error");
-                    } else {
-                        loader(false)
-                        console.log(request.response)
-                        if (request.response !== "") {
-                            const data = JSON.parse(request.response)
-                            console.log(data)
-                            document.getElementById("modal_file_title").innerText = "File Details for Object id : " + file_id
-                            document.getElementById("object_title").innerText = data['title']
-                            document.getElementById("object_format").innerText = data['format_type']
-                            document.getElementById("object_file_size").innerText = data['file_size']
-                            document.getElementById("object_created").innerText = data['created_at'].toString()
-                            file_details.show()
-                        } else {
-                            swal("Something going wrong!", request.response, "error");
-                        }
-                    }
-
-                }
-            }
-
-
-            let find_upload = document.getElementById('find_upload');
-            let find_object = document.getElementById('find_object');
-            find_upload.addEventListener('submit', function (e) {
-                e.preventDefault();
-                loader(true)
-                get_files_by_upload_id()
-            });
-
-            find_object.addEventListener('submit', function (e) {
-                e.preventDefault();
-                loader(true)
-                let file = document.getElementById("file_object_id")
-                let file_id = file.value
-                if (file_id !== "") {
-                    find_by_object_id(file_id)
-                    file.value = ""
-                }
-            });
-        }
-    )();
-
-</script>
+<script src="/static/js/upload.js"></script>
 </body>
 </html>
