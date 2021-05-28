@@ -43,3 +43,31 @@
 .modal-full .modal-content {
     min-height: 100vh;
 }
+body {
+    background-color: #FFFFFF;
+    font-family: Verdana,Arial,Helvetica,sans-serif;
+    font-size: small;
+    color: #000000;
+}
+
+#dropbox {
+    border: 3px solid #dee2e6 !important;
+    padding: 20px;
+}
+
+#dropbox.active {
+    border: 6px solid #dee2e6 !important;
+}
+
+.progress-trough {
+    border: 1px solid #000000;
+    height: 24px;
+    width: 100%;
+    position: relative;
+}
+
+.progress-bar {
+    width: 50%;
+    height: 100%;
+    background-color: #0099FF;
+}
