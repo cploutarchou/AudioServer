@@ -18,4 +18,6 @@ db.init_app(app)
 from views import *
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5000, threaded=True)
+# else:
+#     app.run(host="172.21.0.25", port=5000)
