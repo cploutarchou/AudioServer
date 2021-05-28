@@ -1,18 +1,22 @@
+import errno
+import glob
 import os
 import json
+from uuid import uuid4
 
 import flask
 import mongoengine
 import pandas as pd
 import plotly
+from mongoengine import errors
 from mongoengine.errors import ValidationError, LookUpError, SaveConditionError
 
 from logger import logger
 import models
 import plotly.express as px
 from datetime import datetime
-from flask import render_template, request, session, jsonify
-from werkzeug.utils import secure_filename
+from flask import render_template, request, session, jsonify, url_for, send_from_directory
+from werkzeug.utils import secure_filename, redirect
 
 from main import app
 
@@ -78,50 +82,6 @@ def index():
     return render_template('index.html', data=context)
 
 
-@app.route("/upload", methods=['POST'])
-def upload():
-    return_response = None
-    job_uuid = None
-    if request.method == 'POST':
-        file = None
-        if request.files and "file" in request.files:
-            file = request.files['file']
-        else:
-            return_response = jsonify(dict(code=400, msg="No Files"))
-        if "uuid" in request.form:
-            job_uuid = request.form['uuid']
-        if job_uuid is None:
-            return_response = jsonify(dict(code=400, msg="Something going wrong."))
-        if file.filename == '':
-            return_response = jsonify(dict(code=400, msg="No valid file"))
-        if file and allowed_file(file.filename):
-            # save the file with to our Upload folder
-            filename = secure_filename(file.filename)
-            # exists = file.get(os.path.join(app.config['UPLOADED_AUDIOS_DEST'], filename))
-            file.save(os.path.join(app.config['UPLOADED_AUDIOS_DEST'], filename))
-            os.path.getsize(app.config['UPLOADED_AUDIOS_DEST'] + "/" + filename)
-            size = os.path.getsize(app.config['UPLOADED_AUDIOS_DEST'] + "/" + filename)
-            name, format_type = filename.split('.')
-            file.close()
-            data = {
-                "format_type": format_type,
-                'title': name,
-                'file_size': size,
-                "status": 1,
-                "updated_at": datetime.now(),
-                "job_id": str(job_uuid)
-            }
-            object_id = models.insert_entry(data)
-
-            if object_id is not None:
-                return_response = jsonify(dict(code=200, msg="File successive uploaded"))
-
-        else:
-            allowed = ', '.join(ALLOWED_EXTENSIONS)
-            return_response = jsonify(dict(code=400, msg=f"Allowed extensions file : {allowed}"))
-    return return_response
-
-
 @app.route("/create_batch", methods=['POST'])
 def create_batch():
     job_uuid = None
@@ -184,3 +144,78 @@ def stats():
 def html_error(e):
     # defining function
     return render_template("error.html", error=e)
+
+
+@app.route("/upload", methods=["POST"])
+def uploads():
+    failed_files = []
+    job_uuid = None
+    if request.method == 'POST':
+        files = request.files.getlist("file")
+        if files is None:
+            return jsonify(dict(code=400, msg="No Files"))
+
+        if "uuid" in request.form:
+            job_uuid = request.form['uuid']
+        logger.info("test")
+        target = f"{app.config['UPLOADED_AUDIOS_DEST']}/{job_uuid}"
+        if job_uuid is None:
+            return jsonify(dict(code=400, msg="Something going wrong."))
+        try:
+            os.mkdir(target)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                return ajax_response(False, f"Couldn't create upload directory: {target}")
+            pass
+        logger.info(files)
+        for file in files:
+            logger.info(file.filename)
+            if file.filename == '':
+                return jsonify(dict(code=400, msg="No valid file"))
+            if file and allowed_file(file.filename):
+                # save the file with to our Upload folder
+                filename = secure_filename(file.filename)
+                # exists = file.get(os.path.join(app.config['UPLOADED_AUDIOS_DEST'], filename))
+                try:
+                    file.save(os.path.join(target, filename))
+                    from shutil import copyfileobj
+                except OSError as error:
+                    logger.info(f"Something going wrong. Unable to save filename. Error : {str(error)}")
+                    failed_files.append(file)
+                    continue
+                size = os.path.getsize(target + "/" + filename)
+                name, format_type = filename.split('.')
+                file.close()
+                data = {
+                    "format_type": format_type,
+                    'title': name,
+                    'file_size': size,
+                    "status": 1,
+                    "updated_at": datetime.now(),
+                    "job_id": str(job_uuid)
+                }
+                try:
+                    models.insert_entry(data)
+                except errors.SaveConditionError as e:
+                    failed_files.append(file)
+
+            else:
+                allowed = ', '.join(ALLOWED_EXTENSIONS)
+                return jsonify(dict(code=400, msg=f"Allowed extensions file : {allowed}"))
+        return ajax_response(200, 'ok')
+
+
+@app.route('/render/<file_id>/<action>/', methods=['GET'])
+def download(file_id, action):
+    folder = models.Files.objects(id=file_id).first()
+
+    filename = f"{folder['title']}.{folder['format_type']}"
+    root = f"{app.config['UPLOADED_AUDIOS_DEST']}/{folder['job_id']}"
+    if action.lower() == 'play':
+        return send_from_directory(directory=root, path=filename)
+    return send_from_directory(directory=root, path=filename, as_attachment=True)
+
+
+def ajax_response(status, response):
+    status_code = 201 if status else "error"
+    return flask.Response(status=status_code, response=json.dumps(response))
