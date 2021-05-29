@@ -14,20 +14,19 @@ from mongoengine.errors import ValidationError, LookUpError, SaveConditionError
 
 
 class Users(Document):
-    username = StringField(requires=True, index=True)
     password = StringField(requires=True, index=True)
     email = StringField(requires=True, index=True)
     verification_token = StringField(requires=True, index=True)
-    status = IntField(requires=True, index=True,default=0)
+    status = IntField(requires=True, index=True, default=0)
     created_at = DateTimeField(required=True, index=True, default=datetime.now())
     updated_at = DateTimeField(required=True, index=True, default=datetime.now())
     meta = {
         "auto_create_index": True,
         "index_background": True,
         "indexes": [
-            "username",
             "password",
             "email",
+            "status",
         ]
     }
 
