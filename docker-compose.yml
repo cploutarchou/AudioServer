@@ -203,6 +203,8 @@ services:
       - 80:80
     volumes:
       - .:/code
+    env_file:
+      - .env
     depends_on:
       - router01
     networks:
