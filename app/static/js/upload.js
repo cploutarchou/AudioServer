@@ -13,6 +13,115 @@ let generateUUID = () => {
         return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
     });
 }
+let get_files_by_upload_id = () => {
+
+    const upload_id = document.getElementById("upload_id_input").value
+    let request = new XMLHttpRequest();
+    request.responseType = 'json';
+    request.open("GET", `http://127.0.0.1:5000/find/${upload_id}`);
+    request.send();
+    request.onload = () => {
+        if (request.status !== 200) { // analyze HTTP status of the response
+            loader(false)
+            swal("Something going wrong!", `No valid Upload ID : ${upload_id}`, "error");
+        } else {
+            loader(false)
+            if (request.response !== "") {
+                const data = request.response['data']
+                console.log(data)
+                if (data.length > 0) {
+                    // var table = $('#upload_id_tbl').DataTable();
+                    let table = $('#upload_id_tbl').DataTable({
+                        data: data,
+                        retrieve: true,
+                        columns: [
+                            {title: "Object ID"},
+                            {title: "File"},
+                            {title: "Play"},
+                            {title: "Download"},
+                        ], columnDefs: [
+                            {
+                                targets: 2,
+                                render: function (data, type, row, meta) {
+                                    if (type === 'display') {
+                                        data = '<a href="' + 'render/' + data + '/" target="_blank">Play</a>';
+                                    }
+                                    return data;
+                                }
+                            },
+                            {
+                                targets: 3,
+                                render: function (data, type, row, meta) {
+                                    if (type === 'display') {
+                                        data = '<a href="' + 'render/' + data + '/" target="_blank">Download</a>';
+                                    }
+                                    return data;
+                                }
+                            }],
+
+                    });
+
+                }
+                modal.show()
+            } else {
+                swal("Something going wrong!", `Unable to fetch data for upload id : ${upload_id}`, "error");
+            }
+        }
+
+    }
+    request.onerror = () => {
+        loader(false)
+        alert("Request failed");
+    }
+};
+let find_by_object_id = (file_id) => {
+
+    let request = new XMLHttpRequest();
+    const url = 'http://127.0.0.1:5000/file/' + file_id
+    request.open("GET", url);
+    request.send();
+
+    request.onload = () => {
+        if (request.status !== 200) { // analyze HTTP status of the response
+            loader(false)
+            swal("Something going wrong!", `No valid Object ID : ${file_id}`, "error");
+        } else {
+            loader(false)
+            console.log(request.response)
+            if (request.response !== "") {
+                const data = JSON.parse(request.response)
+                console.log(data)
+                document.getElementById("modal_file_title").innerText = "File Details for Object id : " + file_id
+                document.getElementById("object_title").innerText = data['title']
+                document.getElementById("object_format").innerText = data['format_type']
+                document.getElementById("object_file_size").innerText = data['file_size']
+                document.getElementById("object_created").innerText = data['created_at'].toString()
+                file_details.show()
+            } else {
+                swal("Something going wrong!", request.response, "error");
+            }
+        }
+
+    }
+}
+let find_upload = document.getElementById('find_upload');
+let find_object = document.getElementById('find_object');
+find_upload.addEventListener('submit', function (e) {
+    e.preventDefault();
+    loader(true)
+    get_files_by_upload_id()
+});
+
+find_object.addEventListener('submit', function (e) {
+    e.preventDefault();
+    loader(true)
+    let file = document.getElementById("file_object_id")
+    let file_id = file.value
+    if (file_id !== "") {
+        find_by_object_id(file_id)
+        file.value = ""
+    }
+});
 
 let create_batch = (job_id) => {
 
@@ -23,16 +132,22 @@ let create_batch = (job_id) => {
     request.open("POST", url);
     request.send(formData);
     request.onload = () => {
+        swal("Something going wrong!", `Error : ${request.response}`, "error");
         if (request.status !== 200) { // analyze HTTP status of the response
-            item_counter += 1
-            failed += 1
+            swal("Something going wrong!", `Error : ${request.response}`, "error");
         } else {
             loader(false)
-            swal("Good job!", request.response, "success");
-            let upload_id_div = document.getElementById("upload_id")
-            upload_id_div.innerHTML = 'Upload ID :' +
-                '<a href="#" class="alert-link">' + request.response + '</a>.'
-            upload_id_div.style.display = ""
+            swal("Good job! Please save the upload ID", `Upload ID : ${request.response}`, "success").then((value) => {
+                let upload_id_div = document.getElementById("upload_id")
+                upload_id_div.innerHTML = 'Upload ID :' +
+                    '<div class="alert-link" style="font-size: large;">' + request.response + '</div>.'
+                upload_id_div.style.display = ""
+                let upload_input = document.getElementById("upload_id_input")
+                upload_input.value = request.response
+                document.getElementById("exampleModalLabel").innerText = "Files for Upload id : " + job_id
+                get_files_by_upload_id()
+            });
+
         }
     }
 }
@@ -46,6 +161,7 @@ let mymodal = document.getElementById("modal")
 let file_details_modal = document.getElementById("modal_file")
 let modal = new bootstrap.Modal(mymodal)
 let file_details = new bootstrap.Modal(file_details_modal)
+
 let loader = (enable) => {
     let loader_div = document.getElementById("loader");
     if (enable === true) {
@@ -72,6 +188,7 @@ $(document).ready(function () {
         // just POST to the upload endpoint directly. However, with JS we'll do
         // the POST using ajax and then redirect them ourself when done.
         e.preventDefault();
+        loader(true)
         doUpload();
     })
 });
@@ -220,116 +337,5 @@ function initDropbox() {
     $(document).on("dragover", stopDefault);
     $(document).on("drop", stopDefault);
 
-
-    let get_files_by_upload_id = () => {
-
-        const upload_id = document.getElementById("upload_id_input").value
-        let request = new XMLHttpRequest();
-        request.responseType = 'json';
-        request.open("GET", `http://127.0.0.1:5000/find/${upload_id}`);
-        request.send();
-        request.onload = () => {
-            if (request.status !== 200) { // analyze HTTP status of the response
-                loader(false)
-                swal("Something going wrong!", `No valid Upload ID : ${upload_id}`, "error");
-            } else {
-                loader(false)
-                if (request.response !== "") {
-                    const data = request.response['data']
-                    console.log(data)
-                    if (data.length > 0) {
-                        // var table = $('#upload_id_tbl').DataTable();
-                        let table = $('#upload_id_tbl').DataTable({
-                            data: data,
-                            retrieve: true,
-                            columns: [
-                                {title: "Object ID"},
-                                {title: "File"},
-                                {title: "Play"},
-                                {title: "Download"},
-                            ], columnDefs: [
-                                {
-                                    targets: 2,
-                                    render: function (data, type, row, meta) {
-                                        if (type === 'display') {
-                                            data = '<a href="' + 'render/' + data + '/" target="_blank">Play</a>';
-                                        }
-                                        return data;
-                                    }
-                                },
-                                {
-                                    targets: 3,
-                                    render: function (data, type, row, meta) {
-                                        if (type === 'display') {
-                                            data = '<a href="' + 'render/' + data + '/" target="_blank">Download</a>';
-                                        }
-                                        return data;
-                                    }
-                                }],
-
-                        });
-
-                    }
-                    modal.show()
-                } else {
-                    swal("Something going wrong!", `Unable to fetch data for upload id : ${upload_id}`, "error");
-                }
-            }
-
-        }
-        request.onerror = () => {
-            loader(false)
-            alert("Request failed");
-            alert("Request failed");
-        }
-    };
-    let find_by_object_id = (file_id) => {
-
-        let request = new XMLHttpRequest();
-        const url = 'http://127.0.0.1:5000/file/' + file_id
-        request.open("GET", url);
-        request.send();
-
-        request.onload = () => {
-            if (request.status !== 200) { // analyze HTTP status of the response
-                loader(false)
-                swal("Something going wrong!", `No valid Object ID : ${file_id}`, "error");
-            } else {
-                loader(false)
-                console.log(request.response)
-                if (request.response !== "") {
-                    const data = JSON.parse(request.response)
-                    console.log(data)
-                    document.getElementById("modal_file_title").innerText = "File Details for Object id : " + file_id
-                    document.getElementById("object_title").innerText = data['title']
-                    document.getElementById("object_format").innerText = data['format_type']
-                    document.getElementById("object_file_size").innerText = data['file_size']
-                    document.getElementById("object_created").innerText = data['created_at'].toString()
-                    file_details.show()
-                } else {
-                    swal("Something going wrong!", request.response, "error");
-                }
-            }
-
-        }
-    }
-    let find_upload = document.getElementById('find_upload');
-    let find_object = document.getElementById('find_object');
-    find_upload.addEventListener('submit', function (e) {
-        e.preventDefault();
-        loader(true)
-        get_files_by_upload_id()
-    });
-
-    find_object.addEventListener('submit', function (e) {
-        e.preventDefault();
-        loader(true)
-        let file = document.getElementById("file_object_id")
-        let file_id = file.value
-        if (file_id !== "") {
-            find_by_object_id(file_id)
-            file.value = ""
-        }
-    });
 
 }
