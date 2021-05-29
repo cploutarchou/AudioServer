@@ -70,11 +70,11 @@ def login():
         return res
     if request.method == 'POST':
         users = models.Users
-        login_user = users.objects(username=request.form['email']).first()
+        login_user = users.objects(email=request.form['email']).first()
         if login_user and login_user['status'] == 1:
             if bcrypt.hashpw(request.form['password'].encode('utf-8'), login_user['password'].encode('utf-8')) == \
                     login_user['password'].encode('utf-8'):
-                session['username'] = request.form['username']
+                session['username'] = request.form['email']
                 session['verified'] = True
                 return redirect(url_for('index'))
 
