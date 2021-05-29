@@ -197,17 +197,17 @@ services:
     ports:
       - 27030:27017
 
-#  flask-app:
-#    build: .
-#    ports:
-#      - 80:80
-#    volumes:
-#      - .:/code
-#    depends_on:
-#      - router01
-#    networks:
-#      audioserver-dev-env:
-#        ipv4_address: 172.21.0.25
+    flask-app:
+      build: .
+      ports:
+        - 80:80
+      volumes:
+        - .:/code
+      depends_on:
+        - router01
+      networks:
+        audioserver-dev-env:
+          ipv4_address: 172.21.0.25
   mongodb:
     image: mongo:4.4
     volumes:
@@ -222,10 +222,12 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
     volumes:
       - es_data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
     environment:
-      - http.host=0.0.0.0
+      - http.host=172.21.0.60
       - transport.host=localhost
-      - network.host=0.0.0.0
+      - network.host=172.21.0.60
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
       memlock:
@@ -236,7 +238,8 @@ services:
         limits:
           memory: 1g
     networks:
-      - audioserver-dev-env
+      audioserver-dev-env:
+        ipv4_address: 172.21.0.60
   # Graylog: https://hub.docker.com/r/graylog/graylog/
   graylog:
     image: graylog/graylog:4.0
@@ -254,6 +257,7 @@ services:
       - GRAYLOG_MONGODB_URI=mongodb://172.21.0.50:27017/graylog
       - GRAYLOG_MONGODB_BIND_PORT=27080
       - GRAYLOG_MONGODB_BIND_IP=172.21.0.50
+    entrypoint: /usr/bin/tini -- wait-for-it elasticsearch:9200 --  /docker-entrypoint.sh
     networks:
       audioserver-dev-env:
         ipv4_address: 172.21.0.35
