@@ -116,9 +116,9 @@ def register():
                         category="success")
                     url = f"http://127.0.0.1:5000/verify?id={user.id}&token={user.verification_token}"
                     mailer = Mailer()
-                    mailer.connect()
-                    mailer.verify(url=url, to=request.form['email'])
-                    mailer.send_all()
+                    mailer.set_to(to=[request.form['email']])
+                    mailer.verify(url=url)
+                    mailer.send()
                     return redirect(url_for('index'))
                 else:
                     flash(f"That username already exists!")
