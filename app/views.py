@@ -18,6 +18,7 @@ from flask import render_template, request, session, jsonify, url_for, send_from
 from werkzeug.utils import secure_filename, redirect
 import bcrypt
 
+from mailer import Mailer
 from main import app
 
 uploads_dir = app.config['UPLOADED_AUDIOS_DEST']
@@ -69,7 +70,7 @@ def login():
         return res
     if request.method == 'POST':
         users = models.Users
-        login_user = users.objects(username=request.form['username']).first()
+        login_user = users.objects(username=request.form['email']).first()
         if login_user and login_user['status'] == 1:
             if bcrypt.hashpw(request.form['password'].encode('utf-8'), login_user['password'].encode('utf-8')) == \
                     login_user['password'].encode('utf-8'):
@@ -91,22 +92,21 @@ def register():
     res = is_logged_in(redirect_view_method='index')
     if res is True:
         return res
-    required_fields = ['username', 'password', "confirm_password", "email"]
+    required_fields = ['password', "confirm_password", "email"]
     if request.method == 'POST':
         if all(field in request.form for field in required_fields):
             if request.form['password'] == request.form['confirm_password']:
-                print("OK")
-                existing_user = models.Users.objects(username=request.form['username'],
+                existing_user = models.Users.objects(email=request.form['email'],
                                                      password=request.form['password'])
                 print(existing_user)
                 if len(existing_user) == 0:
                     hash_pass = bcrypt.hashpw(request.form['password'].encode('utf-8'), bcrypt.gensalt())
                     try:
-                        user = models.Users(username=request.form['username'], password=hash_pass,
-                                            email=request.form['email'], verification_token=token_hex(25)).save()
+                        user = models.Users(email=request.form['email'], password=hash_pass,
+                                            verification_token=token_hex(25)).save()
                         print(user.verification_token)
                         if user and user.id:
-                            session['username'] = request.form['username']
+                            session['username'] = request.form['email']
                     except SaveConditionError as e:
                         flash(f"Something going wrong. Unable to register . Error : {e}", category="error")
                         return render_template('register.html')
@@ -114,6 +114,11 @@ def register():
                         f"Your account has been successfully created. Please verify your account before continue. "
                         f"Verification mail has been sent to your email address",
                         category="success")
+                    url = f"http://127.0.0.1:5000/verify?id={user.id}&token={user.verification_token}"
+                    mailer = Mailer()
+                    mailer.connect()
+                    mailer.verify(url=url, to=request.form['email'])
+                    mailer.send_all()
                     return redirect(url_for('index'))
                 else:
                     flash(f"That username already exists!")
@@ -124,16 +129,12 @@ def register():
         else:
             flash("Pleaser fill all form fields", category="error")
             return redirect(url_for('register'))
+
     return render_template('register.html')
 
 
 @app.route('/verify', methods=['GET'])
 def verify():
-    res = is_logged_in(redirect_view_method='index')
-    if res is not True:
-        return res
-    # Sample Url:
-    # http://127.0.0.1:5000/verify?id=60b17819dbf1d5c899833a11&token=49c97c2abba5476ddcde29cac86f3266df75d1e5746fa434b1
     _ = request.args.get('id')
     token = request.args.get('token')
     if _ is not None and token is not None:
@@ -143,6 +144,9 @@ def verify():
             data = {"status": 1, "updated_at": datetime.now()}
             login_user.update(**data)
             flash("Your account has been successfully verified. Please log in", category="success")
+            return render_template('login.html')
+        else:
+            flash("Something going wrong. Unable to verify your account.", category="error")
             return render_template('login.html')
 
 
@@ -207,28 +211,33 @@ def create_batch():
 @app.route("/stats")
 def stats():
     res = is_logged_in(redirect_view_method="login")
+    available_objects = models.Files.objects().count()
     if res is not True:
         return res
-    context = {"top_10": models.get_top_10(),
-               "title": "AudioServer",
-               "average_file_size": avg()['AverageValue'],
-               "total_files": models.Files.objects().count(),
-               "total_size": models.convert_size(models.Files.objects.sum('file_size'))
-               }
-    data = last_7_days_upload()
-    df = pd.DataFrame(data['data'])
-    fig = px.bar(df, x='date', y='items', barmode='stack',
-                 hover_data=['date', 'items'], color='date',
-                 labels={'pop': 'population of Canada'}, height=350)
+    if available_objects > 0:
+        context = {"top_10": models.get_top_10(),
+                   "title": "AudioServer",
+                   "average_file_size": avg()['AverageValue'],
+                   "total_files": available_objects,
+                   "total_size": models.convert_size(models.Files.objects.sum('file_size')),
+                   "nodata": False
+                   }
+        data = last_7_days_upload()
+        df = pd.DataFrame(data['data'])
+        fig = px.bar(df, x='date', y='items', barmode='stack',
+                     hover_data=['date', 'items'], color='date',
+                     labels={'pop': 'population of Canada'}, height=350)
 
-    fig.update_layout(barmode='stack')
-    fig.update_xaxes(categoryorder='category ascending')
-    graph_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-    header = "Weekly Uploads"
-    description = """
-
-        """
-    return render_template('stats.html', data=context, graphJSON=graph_json, header=header, description=description)
+        fig.update_layout(barmode='stack')
+        fig.update_xaxes(categoryorder='category ascending')
+        graph_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+        header = "Weekly Uploads"
+        description = """
+    
+            """
+        return render_template('stats.html', data=context, graphJSON=graph_json, header=header, description=description)
+    else:
+        return render_template('stats.html', data={"nodata": True, "title": "AudioServer", })
 
 
 @app.errorhandler(code_or_exception=404)
