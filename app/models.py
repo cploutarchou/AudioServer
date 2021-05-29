@@ -13,6 +13,25 @@ from main import app
 from mongoengine.errors import ValidationError, LookUpError, SaveConditionError
 
 
+class Users(Document):
+    username = StringField(requires=True, index=True)
+    password = StringField(requires=True, index=True)
+    email = StringField(requires=True, index=True)
+    verification_token = StringField(requires=True, index=True)
+    status = IntField(requires=True, index=True,default=0)
+    created_at = DateTimeField(required=True, index=True, default=datetime.now())
+    updated_at = DateTimeField(required=True, index=True, default=datetime.now())
+    meta = {
+        "auto_create_index": True,
+        "index_background": True,
+        "indexes": [
+            "username",
+            "password",
+            "email",
+        ]
+    }
+
+
 class Files(Document):
     created_at = DateTimeField(required=True, index=True)
     file_size = IntField(required=True, index=True)
@@ -152,6 +171,7 @@ def get_upload_details(upload_id):
 def get_file(file_id):
     try:
         res = Files.objects(id=file_id, status=1).first()
+        print(res)
         data = {}
         if res and len(res) > 0:
             for key in res:
