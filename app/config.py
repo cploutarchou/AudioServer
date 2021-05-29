@@ -2,11 +2,28 @@ from dotenv import load_dotenv
 
 import os
 
-load_dotenv()
-# Email setting
-email_username = os.getenv("EMAIL_USERNAME", None)
-email_password = os.getenv("EMAIL_PASSWORD", None)
-email_host = os.getenv("EMAIL_HOST", None)
-email_port = os.getenv("EMAIL_PORT", None)
-ssl_support = os.getenv("EMAIL_SSL_SUPPORT", False)
-email_from = os.getenv("EMAIL_FROM", False)
+env_type = os.environ['ENV_TYPE']
+debug = os.environ['DEBUG']
+debug = True if debug == 'True' else False
+if env_type is True:
+    print(f"Debug Mode is on")
+    load_dotenv()
+
+# APPLICATION CONFIGURATION
+secret = os.environ["SECRET_KEY"]
+upload_dir = os.environ["UPLOADS_DIR"]
+
+# MONGO DB SETTINGS
+mongo_host = os.environ["MONGODB_HOST"]
+mongodb_port = os.environ["MONGODB_PORT"]
+mongo_db = os.environ["MONGODB_DB"]
+mongo_connect = os.environ["MONGODB_CONNECT"]
+mongo_connect = True if mongo_connect == 'True' else False
+# EMAIL SETTINGS
+email_username = os.environ["EMAIL_USERNAME"]
+email_password = os.environ["EMAIL_PASSWORD"]
+email_host = os.environ["EMAIL_HOST"]
+email_port = int(os.environ["EMAIL_PORT"])
+ssl_support = os.environ["EMAIL_SSL_SUPPORT"]
+email_from = os.environ["EMAIL_FROM"]
+ssl_support = True if ssl_support == 'True' else False
