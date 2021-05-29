@@ -18,6 +18,12 @@
 <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
     <!-- Navbar Brand-->
     <a class="navbar-brand ps-3" href="{{ url_for('index') }}">{{ data.title }}</a>
+    <!-- Sidebar Toggle-->
+    <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0"
+            id="sidebarToggle"><span class="fas fa-bars"></span></button>
+
+    <a class="btn-close-white btn" style="    margin-left: auto !important; padding-right: 2em"
+       href="{{ url_for('logout') }}">Logout</a>
 </nav>
 <div id="loader" class="loader"></div>
 <div id="layoutSidenav">
@@ -129,7 +135,7 @@
             <div class="container-fluid px-4">
                 <h1 class="mt-4">Dashboard</h1>
                 <ol class="breadcrumb mb-4">
-                    <li class="breadcrumb-item active">Dashboard</li>
+                    <li class="breadcrumb-item active"><a class="active" href="{{ url_for('index') }}">Dashboard</a></li>
                 </ol>
                 <div class="row">
                     <div class="col-xl-63 col-md-6">
@@ -266,5 +272,24 @@
 <script src="/static/js/jquery.dataTables.min.js" type="text/javascript"></script>
 <script src="/static/js/sweetalert.min.js"></script>
 <script src="/static/js/upload.js"></script>
+<script>
+    window.addEventListener('DOMContentLoaded', event => {
+
+        // Toggle the side navigation
+        const sidebarToggle = document.body.querySelector('#sidebarToggle');
+        if (sidebarToggle) {
+            // Uncomment Below to persist sidebar toggle between refreshes
+            // if (localStorage.getItem('sb|sidebar-toggle') === 'true') {
+            //     document.body.classList.toggle('sb-sidenav-toggled');
+            // }
+            sidebarToggle.addEventListener('click', event => {
+                event.preventDefault();
+                document.body.classList.toggle('sb-sidenav-toggled');
+                localStorage.setItem('sb|sidebar-toggle', document.body.classList.contains('sb-sidenav-toggled'));
+            });
+        }
+
+    });
+</script>
 </body>
 </html>

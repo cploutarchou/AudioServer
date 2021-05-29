@@ -17,6 +17,11 @@
 <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
     <!-- Navbar Brand-->
     <a class="navbar-brand ps-3" href="{{ url_for('index') }}">{{ data.title }}</a>
+    <!-- Sidebar Toggle-->
+    <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0"
+            id="sidebarToggle"><span class="fas fa-bars"></span></button>
+
+    <a class="btn-close-white btn" style="    margin-left: auto !important; padding-right: 2em" href="{{ url_for('logout') }}">Logout</a>
 </nav>
 <div id="layoutSidenav">
     <div id="layoutSidenav_nav">
@@ -43,7 +48,7 @@
                 <h1 class="mt-4">Upload Statistics</h1>
                 <ol class="breadcrumb mb-4">
                     <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Stats</li>
+                    <li class="breadcrumb-item"><a class="active"href="{{ url_for('index') }}">Stats</a></li>
                 </ol>
                 <div class="row">
                     <div class="col">
@@ -146,6 +151,23 @@
 <script type="text/javascript">
     let graphs = {{graphJSON | safe}};
     Plotly.plot('chart', graphs, {});
+    window.addEventListener('DOMContentLoaded', event => {
+
+    // Toggle the side navigation
+    const sidebarToggle = document.body.querySelector('#sidebarToggle');
+    if (sidebarToggle) {
+        // Uncomment Below to persist sidebar toggle between refreshes
+        // if (localStorage.getItem('sb|sidebar-toggle') === 'true') {
+        //     document.body.classList.toggle('sb-sidenav-toggled');
+        // }
+        sidebarToggle.addEventListener('click', event => {
+            event.preventDefault();
+            document.body.classList.toggle('sb-sidenav-toggled');
+            localStorage.setItem('sb|sidebar-toggle', document.body.classList.contains('sb-sidenav-toggled'));
+        });
+    }
+
+});
 </script>
 </body>
 </html>

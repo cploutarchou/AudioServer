@@ -4558,6 +4558,9 @@ textarea.form-control-lg {
 .breadcrumb-item.active {
   color: #6c757d;
 }
+.active{
+  font-weight: bold;
+}
 
 .pagination, .dataTable-pagination ul {
   display: flex;

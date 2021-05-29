@@ -64,6 +64,9 @@ def last_7_days_upload():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    res = is_logged_in(redirect_view_method='index')
+    if res is True:
+        return res
     if request.method == 'POST':
         users = models.Users
         login_user = users.objects(username=request.form['username']).first()
@@ -77,8 +80,17 @@ def login():
     return render_template('login.html')
 
 
+@app.route('/logout', methods=['GET'])
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
 @app.route('/register', methods=['POST', 'GET'])
 def register():
+    res = is_logged_in(redirect_view_method='index')
+    if res is True:
+        return res
     required_fields = ['username', 'password', "confirm_password", "email"]
     if request.method == 'POST':
         if all(field in request.form for field in required_fields):
@@ -117,6 +129,9 @@ def register():
 
 @app.route('/verify', methods=['GET'])
 def verify():
+    res = is_logged_in(redirect_view_method='index')
+    if res is not True:
+        return res
     # Sample Url:
     # http://127.0.0.1:5000/verify?id=60b17819dbf1d5c899833a11&token=49c97c2abba5476ddcde29cac86f3266df75d1e5746fa434b1
     _ = request.args.get('id')
@@ -133,8 +148,10 @@ def verify():
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    if 'username' not in session or session.get('username') == "" or "verified" not in session:
-        return redirect(url_for('login'))
+    print(session)
+    res = is_logged_in(redirect_view_method='login')
+    if res is not True:
+        return res
     # redis.incr('hits')
     # models.check_for_required_indexes()
     context = {
@@ -189,6 +206,9 @@ def create_batch():
 
 @app.route("/stats")
 def stats():
+    res = is_logged_in(redirect_view_method="login")
+    if res is not True:
+        return res
     context = {"top_10": models.get_top_10(),
                "title": "AudioServer",
                "average_file_size": avg()['AverageValue'],
@@ -291,3 +311,10 @@ def download(file_id, action):
 def ajax_response(status, response):
     status_code = 201 if status else "error"
     return flask.Response(status=status_code, response=json.dumps(response))
+
+
+def is_logged_in(redirect_view_method):
+    if 'username' in session and session.get('username') != "" and session.get("verified") is True:
+        return True
+    else:
+        return redirect(url_for(redirect_view_method))
