@@ -65,9 +65,8 @@ def last_7_days_upload():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    res = is_logged_in(redirect_view_method='index')
-    if res is True:
-        return res
+    if is_logged_in() is True:
+        return redirect(url_for('index'))
     if request.method == 'POST':
         users = models.Users
         login_user = users.objects(email=request.form['email']).first()
@@ -89,9 +88,8 @@ def logout():
 
 @app.route('/register', methods=['POST', 'GET'])
 def register():
-    res = is_logged_in(redirect_view_method='index')
-    if res is True:
-        return res
+    if is_logged_in() is True:
+        return redirect(url_for("login"))
     required_fields = ['password', "confirm_password", "email"]
     if request.method == 'POST':
         if all(field in request.form for field in required_fields):
@@ -152,10 +150,8 @@ def verify():
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    print(session)
-    res = is_logged_in(redirect_view_method='login')
-    if res is not True:
-        return res
+    if is_logged_in() is not True:
+        return redirect(url_for("login"))
     # redis.incr('hits')
     # models.check_for_required_indexes()
     context = {
@@ -210,10 +206,9 @@ def create_batch():
 
 @app.route("/stats")
 def stats():
-    res = is_logged_in(redirect_view_method="login")
     available_objects = models.Files.objects().count()
-    if res is not True:
-        return res
+    if is_logged_in() is not True:
+        return redirect(url_for("login"))
     if available_objects > 0:
         context = {"top_10": models.get_top_10(),
                    "title": "AudioServer",
@@ -322,8 +317,8 @@ def ajax_response(status, response):
     return flask.Response(status=status_code, response=json.dumps(response))
 
 
-def is_logged_in(redirect_view_method):
+def is_logged_in():
     if 'username' in session and session.get('username') != "" and session.get("verified") is True:
         return True
     else:
-        return redirect(url_for(redirect_view_method))
+        return False
