@@ -9,7 +9,7 @@ jobs:
         run: docker-compose build
       - name: Create app infrastructure
         run: docker-compose up -d
-      - name: wait
+      - name: Wait Stage 1
         run: sleep 20
       - name: Stating process config mongodb servers
         run: docker-compose exec -T configsvr01 sh -c "mongo < /scripts/init-configserver.js"
@@ -19,7 +19,7 @@ jobs:
         run: docker-compose exec -T shard02-a sh -c "mongo < /scripts/init-shard02.js"
       - name: Stating config mongodb Sharding for shard03
         run: docker-compose exec -T shard03-a sh -c "mongo < /scripts/init-shard03.js"
-      - name: wait
+      - name: Wait Stage 2
         run: sleep 20
       - name: Stating config mongodb routers
         run: docker-compose exec -T router01 sh -c "mongo < /scripts/init-router.js"
