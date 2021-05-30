@@ -1,6 +1,4 @@
 #!/bin/bash
-# shellcheck disable=SC2046
-unalias $(alias | grep winpty | cut -d"=" -f1 | cut -d" " -f2)
 echo "Waiting mongo db initialization..."
 sleep 20
 echo "Stating process config mongodb servers"
