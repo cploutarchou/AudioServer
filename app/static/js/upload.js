@@ -21,15 +21,14 @@ let get_files_by_upload_id = () => {
     request.open("GET", `/find/${upload_id}`);
     request.send();
     request.onload = () => {
-        if (request.status !== 200) { // analyze HTTP status of the response
+        if (request.status !== 200) {
             loader(false)
-            swal("Something going wrong!", `No valid Upload ID : ${upload_id}`, "error");
+            swal("Something going wrong!", request.response, "error");
         } else {
             loader(false)
             if (request.response !== "") {
                 const data = request.response['data']
                 if (data.length > 0) {
-                    // var table = $('#upload_id_tbl').DataTable();
                     $('#upload_id_tbl').DataTable({
                         data: data,
                         retrieve: true,
@@ -71,7 +70,7 @@ let get_files_by_upload_id = () => {
     }
     request.onerror = () => {
         loader(false)
-        alert("Request failed");
+        swal("Something going wrong!", `Unable to fetch data for upload id : ${upload_id}`, "error");
     }
 };
 let find_by_object_id = (file_id) => {
@@ -100,6 +99,10 @@ let find_by_object_id = (file_id) => {
             }
         }
 
+    }
+    request.onerror = () => {
+        loader(false)
+        swal("Something going wrong!", `Unable to fetch data for file id : ${file_id}`, "error");
     }
 }
 let find_upload = document.getElementById('find_upload');

@@ -4,13 +4,11 @@ import json
 import math
 from datetime import datetime, timedelta
 
-import flask
-from flask import jsonify
 from mongoengine import ListField, StringField, DateTimeField, Document, IntField, errors
 from bson.json_util import dumps
 from logger import logger
 from main import app
-from mongoengine.errors import ValidationError, LookUpError, SaveConditionError
+from mongoengine.errors import ValidationError, SaveConditionError
 
 
 class Users(Document):
@@ -153,25 +151,44 @@ def insert_upload(batches: list = None):
 
 
 def get_upload_details(upload_id):
-    try:
-        res = Uploads.objects(id=upload_id).first()
-        data = []
-        final_data = {'data': []}
-        if res and len(res.batches) > 0:
-            for batch in res.batches:
-                res = Batches.objects(id=batch).first()
-                if res and len(res.files) > 0:
-                    data.append(res.files)
-        data = list(itertools.chain(*data))
-        for file in data:
-            res = Files.objects(id=file).first()
-            if res:
-                item = [file, f"{res['title']}.{res['format_type']}",
-                        f"{file}/play", f"{file}/download"]
-                final_data['data'].append(item)
-        return flask.Response(status=200, response=json.dumps(final_data))
-    except ValidationError as e:
-        return flask.Response(status=201, response=e.message)
+    """
+
+    Get Audio file details.
+
+    Args:
+        upload_id (str): The Upload ID.
+
+    Raises:
+        ValidationError:  if upload id is not valid or if upload id not found in database.
+
+    Returns:
+        dict : A dictionary with object data
+    """
+    if upload_id and upload_id != "":
+        try:
+            res = Uploads.objects(id=upload_id).first()
+            data = []
+            final_data = {'data': []}
+            if res and len(res.batches) > 0:
+                for batch in res.batches:
+                    res = Batches.objects(id=batch).first()
+                    if res and len(res.files) > 0:
+                        data.append(res.files)
+            data = list(itertools.chain(*data))
+            for file in data:
+                res = Files.objects(id=file).first()
+                if res:
+                    item = [file, f"{res['title']}.{res['format_type']}",
+                            f"{file}/play", f"{file}/download"]
+                    final_data['data'].append(item)
+            return final_data
+        except ValidationError as error:
+            logger.error(str(error.message))
+            raise Exception(str(error.message))
+    else:
+        error = f"No valid upload id. Value = {upload_id}"
+        logger.error(error)
+        raise Exception(error)
 
 
 def get_file(file_id: str = None):
@@ -204,7 +221,7 @@ def get_file(file_id: str = None):
         except ValidationError as error:
             raise Exception(str(error.message))
     else:
-        error = f"Unable to get file details. Error not valid file id. Value is {file_id}"
+        error = f"Error not valid file id. Value is {file_id}"
         logger.error(error)
         raise Exception(error)
 

@@ -10,6 +10,7 @@ import plotly
 from mongoengine import errors
 from mongoengine.errors import ValidationError, SaveConditionError
 
+from common_functions import ALLOWED_EXTENSIONS, allowed_file
 from logger import logger
 import models
 import plotly.express as px
@@ -24,20 +25,16 @@ from main import app
 uploads_dir = app.config['UPLOADED_AUDIOS_DEST']
 os.makedirs(uploads_dir, exist_ok=True)
 
-ALLOWED_EXTENSIONS = ({'mp3', 'wav', 'ogg'})
-
 failed_files = []
-
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route('/find/<_id>', methods=['GET'])
 def find(_id=None):
-    if _id is None:
-        return flask.Response(status=400, response=json.dumps("Post id is required."))
-    return models.get_upload_details(_id)
+    try:
+        data = models.get_upload_details(_id)
+    except Exception as e:
+        return flask.Response(status=404, response=json.dumps(str(e)))
+    return flask.Response(status=200, response=json.dumps(data))
 
 
 @app.route('/file/<_id>', methods=['GET'])
