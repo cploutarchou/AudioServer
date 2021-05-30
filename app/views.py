@@ -14,7 +14,7 @@ from logger import logger
 import models
 import plotly.express as px
 from datetime import datetime
-from flask import render_template, request, session, jsonify, url_for, send_from_directory, flash
+from flask import render_template, request, session, url_for, send_from_directory, flash
 from werkzeug.utils import secure_filename, redirect
 import bcrypt
 
@@ -24,7 +24,9 @@ from main import app
 uploads_dir = app.config['UPLOADED_AUDIOS_DEST']
 os.makedirs(uploads_dir, exist_ok=True)
 
-ALLOWED_EXTENSIONS = {'mp3', 'wav', 'ogg'}
+ALLOWED_EXTENSIONS = ({'mp3', 'wav', 'ogg'})
+
+failed_files = []
 
 
 def allowed_file(filename):
@@ -34,11 +36,7 @@ def allowed_file(filename):
 @app.route('/find/<_id>', methods=['GET'])
 def find(_id=None):
     if _id is None:
-        return {
-            'status_code': 400,
-            'status_msg': 'Bad Request',
-            'description': "Post id is required."
-        }
+        return flask.Response(status=400, response=json.dumps("Post id is required."))
     return models.get_upload_details(_id)
 
 
@@ -112,7 +110,7 @@ def register():
                         f"Your account has been successfully created. Please verify your account before continue. "
                         f"Verification mail has been sent to your email address",
                         category="success")
-                    url = f"http://127.0.0.1:5000/verify?id={user.id}&token={user.verification_token}"
+                    url = f"{flask.request.host_url}/verify?id={user.id}&token={user.verification_token}"
                     mailer = Mailer()
                     mailer.set_to(to=[request.form['email']])
                     mailer.verify(url=url)
@@ -243,30 +241,28 @@ def html_error(e):
 
 @app.route("/upload", methods=["POST"])
 def uploads():
-    failed_files = []
     job_uuid = None
     if request.method == 'POST':
         files = request.files.getlist("file")
         if files is None:
-            return jsonify(dict(code=400, msg="No Files"))
-
+            return flask.Response(status=400, response=json.dumps("No Files available for upload"))
         if "uuid" in request.form:
             job_uuid = request.form['uuid']
         logger.info("test")
         target = f"{app.config['UPLOADED_AUDIOS_DEST']}/{job_uuid}"
         if job_uuid is None:
-            return jsonify(dict(code=400, msg="Something going wrong."))
+            return flask.Response(status=400, response=json.dumps("Something going wrong"))
         try:
             os.mkdir(target)
         except OSError as exc:
             if exc.errno != errno.EEXIST:
-                return ajax_response(False, f"Couldn't create upload directory: {target}")
+                return flask.Response(status=400, response=json.dumps(f"Couldn't create upload directory: {target}"))
             pass
         logger.info(files)
         for file in files:
             logger.info(file.filename)
             if file.filename == '':
-                return jsonify(dict(code=400, msg="No valid file"))
+                return flask.Response(status=400, response=json.dumps("No valid file"))
             if file and allowed_file(file.filename):
                 # save the file with to our Upload folder
                 filename = secure_filename(file.filename)
@@ -294,11 +290,11 @@ def uploads():
                 except errors.SaveConditionError as e:
                     logger.error(f"Something went wrong. Error : {str(e)}")
                     failed_files.append(file)
-
             else:
                 allowed = ', '.join(ALLOWED_EXTENSIONS)
-                return jsonify(dict(code=400, msg=f"Allowed extensions file : {allowed}"))
-        return ajax_response(200, 'ok')
+                return flask.Response(status=400,
+                                      response=json.dumps(f"Not Allowed extension used for upload : {allowed}"))
+        return flask.Response(status=200, response=json.dumps(f"OK"))
 
 
 @app.route('/render/<file_id>/<action>/', methods=['GET'])
@@ -310,11 +306,6 @@ def download(file_id, action):
     if action.lower() == 'play':
         return send_from_directory(directory=root, path=filename)
     return send_from_directory(directory=root, path=filename, as_attachment=True)
-
-
-def ajax_response(status, response):
-    status_code = 201 if status else "error"
-    return flask.Response(status=status_code, response=json.dumps(response))
 
 
 def is_logged_in():

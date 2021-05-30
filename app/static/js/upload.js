@@ -18,7 +18,7 @@ let get_files_by_upload_id = () => {
     const upload_id = document.getElementById("upload_id_input").value
     let request = new XMLHttpRequest();
     request.responseType = 'json';
-    request.open("GET", `http://127.0.0.1:5000/find/${upload_id}`);
+    request.open("GET", `/find/${upload_id}`);
     request.send();
     request.onload = () => {
         if (request.status !== 200) { // analyze HTTP status of the response
@@ -28,10 +28,9 @@ let get_files_by_upload_id = () => {
             loader(false)
             if (request.response !== "") {
                 const data = request.response['data']
-                console.log(data)
                 if (data.length > 0) {
                     // var table = $('#upload_id_tbl').DataTable();
-                    let table = $('#upload_id_tbl').DataTable({
+                    $('#upload_id_tbl').DataTable({
                         data: data,
                         retrieve: true,
                         columns: [
@@ -42,7 +41,7 @@ let get_files_by_upload_id = () => {
                         ], columnDefs: [
                             {
                                 targets: 2,
-                                render: function (data, type, row, meta) {
+                                render: function (data, type) {
                                     if (type === 'display') {
                                         data = '<a href="' + 'render/' + data + '/" target="_blank">Play</a>';
                                     }
@@ -51,7 +50,7 @@ let get_files_by_upload_id = () => {
                             },
                             {
                                 targets: 3,
-                                render: function (data, type, row, meta) {
+                                render: function (data, type) {
                                     if (type === 'display') {
                                         data = '<a href="' + 'render/' + data + '/" target="_blank">Download</a>';
                                     }
@@ -77,7 +76,7 @@ let get_files_by_upload_id = () => {
 let find_by_object_id = (file_id) => {
 
     let request = new XMLHttpRequest();
-    const url = 'http://127.0.0.1:5000/file/' + file_id
+    const url = '/file/' + file_id
     request.open("GET", url);
     request.send();
 
@@ -87,10 +86,8 @@ let find_by_object_id = (file_id) => {
             swal("Something going wrong!", `No valid Object ID : ${file_id}`, "error");
         } else {
             loader(false)
-            console.log(request.response)
             if (request.response !== "") {
                 const data = JSON.parse(request.response)
-                console.log(data)
                 document.getElementById("modal_file_title").innerText = "File Details for Object id : " + file_id
                 document.getElementById("object_title").innerText = data['title']
                 document.getElementById("object_format").innerText = data['format_type']
@@ -137,7 +134,7 @@ let create_batch = (job_id) => {
             swal("Something going wrong!", `Error : ${request.response}`, "error");
         } else {
             loader(false)
-            swal("Good job! Please save the upload ID", `Upload ID : ${request.response}`, "success").then((value) => {
+            swal("Good job! Please save the upload ID", `Upload ID : ${request.response}`, "success").then(() => {
                 let upload_id_div = document.getElementById("upload_id")
                 upload_id_div.innerHTML = 'Upload ID :' +
                     '<div class="alert-link" style="font-size: large;">' + request.response + '</div>.'
@@ -152,14 +149,13 @@ let create_batch = (job_id) => {
     }
 }
 // Constants
-let MAX_UPLOAD_FILE_SIZE = 1024 * 1024; // 1 MB
-let UPLOAD_URL = "http://127.0.0.1:5000/upload";
+let UPLOAD_URL = "/upload";
 const job_uuid = generateUUID()
 // List of pending files to handle when the Upload button is finally clicked.
 let PENDING_FILES = [];
-let mymodal = document.getElementById("modal")
+let upload_modal = document.getElementById("modal")
 let file_details_modal = document.getElementById("modal_file")
-let modal = new bootstrap.Modal(mymodal)
+let modal = new bootstrap.Modal(upload_modal)
 let file_details = new bootstrap.Modal(file_details_modal)
 
 let loader = (enable) => {
@@ -178,7 +174,6 @@ $(document).ready(function () {
     // Set up the handler for the file input box.
     $("#file-input").on("change", function () {
         handleFiles(this.files);
-        console.log(this.files)
     });
 
     // Handle the submit button.
@@ -205,7 +200,7 @@ function doUpload() {
     $progressBar.css({"width": "0%"});
 
     // Collect the form data.
-    fd = collectFormData();
+    let fd = collectFormData();
 
     // Attach the files.
     for (let i = 0, ie = PENDING_FILES.length; i < ie; i++) {
@@ -215,8 +210,7 @@ function doUpload() {
 
     // Inform the back-end that we're doing this over ajax.
     fd.append("uuid", job_uuid);
-    console.log(fd)
-    let xhr = $.ajax({
+    $.ajax({
         xhr: function () {
             let xhrobj = $.ajaxSettings.xhr();
             if (xhrobj.upload) {
@@ -243,19 +237,22 @@ function doUpload() {
         data: fd,
         success: function (data) {
             $progressBar.css({"width": "100%"});
+            console.log(data)
             data = JSON.parse(data);
-
             // How'd it go?
-            if (data.status === "error") {
+            if (data !== "OK") {
                 // Uh-oh.
-                window.alert(data.msg);
+                loader(false)
+                swal("Something going wrong!", `${data}`, "error");
                 $("#upload :input").removeAttr("disabled");
-                return;
             } else {
                 // Ok! Get the UUID.
                 create_batch(job_uuid)
             }
         },
+        error: function (data){
+            console.log( data)
+        }
     });
 }
 
@@ -297,23 +294,23 @@ function handleFiles(files) {
 
 
 function initDropbox() {
-    let $dropbox = $("#dropbox");
+    let dropbox = $("#dropbox");
 
     // On drag enter...
-    $dropbox.on("dragenter", function (e) {
+    dropbox.on("dragenter", function (e) {
         e.stopPropagation();
         e.preventDefault();
         $(this).addClass("active");
     });
 
     // On drag over...
-    $dropbox.on("dragover", function (e) {
+    dropbox.on("dragover", function (e) {
         e.stopPropagation();
         e.preventDefault();
     });
 
     // On drop...
-    $dropbox.on("drop", function (e) {
+    dropbox.on("drop", function (e) {
         e.preventDefault();
         $(this).removeClass("active");
 
@@ -322,7 +319,7 @@ function initDropbox() {
         handleFiles(files);
 
         // Update the display to acknowledge the number of pending files.
-        $dropbox.text(PENDING_FILES.length + " files ready for upload!");
+        dropbox.text(PENDING_FILES.length + " files ready for upload!");
     });
 
     // If the files are dropped outside of the drop zone, the browser will
