@@ -23,6 +23,8 @@ jobs:
           MONGODB_PORT: 27017
           MONGODB_DB: AudioServer
           MONGODB_CONNECT: False
+          directory: AudioServer/AudioServer/.env
+          file_name: .env
   test:
     runs-on: ubuntu-latest
     steps:
