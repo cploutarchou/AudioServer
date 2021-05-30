@@ -204,7 +204,7 @@ services:
     volumes:
       - .:/code
     env_file:
-      - .env
+      - sample.env
     depends_on:
       - router01
     networks:
