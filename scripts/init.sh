@@ -1,7 +1,6 @@
 #!/bin/bash
-env | grep COMPOSE_INTERACTIVE_NO_CLI
-# shellcheck disable=SC2034
-COMPOSE_INTERACTIVE_NO_CLI=0
+# shellcheck disable=SC2046
+unalias $(alias | grep winpty | cut -d"=" -f1 | cut -d" " -f2)
 echo "Waiting mongo db initialization..."
 sleep 20
 echo "Stating process config mongodb servers"
