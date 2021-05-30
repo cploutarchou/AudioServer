@@ -2,7 +2,7 @@ name: docker-compose-actions-workflow
 on: push
 jobs:
   create-envfile:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - name: Make envfile
         uses: SpicyPizza/create-envfile@v1
@@ -25,9 +25,6 @@ jobs:
           MONGODB_CONNECT: False
           directory: AudioServer/AudioServer/.env
           file_name: .env
-  test:
-    runs-on: ubuntu-latest
-    steps:
       - uses: actions/checkout@v2
       - name: Build the stack
         run: docker-compose up -d
