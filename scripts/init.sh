@@ -13,4 +13,4 @@ sleep 20
 echo "Stating process config mongodb routers"
 docker-compose exec -T router01 sh -c "mongo < /scripts/init-router.js"
 echo "Stating process enable mongo db and collections"
-docker-compose exec  -T router01 sh -c "mongo < /scripts/enable.js"
+docker-compose exec -T router01 sh -c "mongo < /scripts/enable.js"
