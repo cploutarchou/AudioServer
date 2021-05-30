@@ -20,9 +20,11 @@ jobs:
       - name: Stating config mongodb Sharding for shard03
         run: docker-compose exec -T shard03-a sh -c "mongo < /scripts/init-shard03.js"
       - name: Wait Stage 2
-        run: sleep 20
+        run: sleep 35
       - name: Stating config mongodb routers
         run: docker-compose exec -T router01 sh -c "mongo < /scripts/init-router.js"
       - name: Stating process enable mongo db and collections
         run: docker-compose exec -T router01 sh -c "mongo < /scripts/enable.js"
+      - name: finish
+        run: echo "Infrastructure successfully builded."
 
