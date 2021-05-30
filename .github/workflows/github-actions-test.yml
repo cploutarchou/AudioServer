@@ -4,27 +4,6 @@ jobs:
   create-envfile:
     runs-on: ubuntu-latest
     steps:
-      - name: Make envfile
-        uses: SpicyPizza/create-envfile@v1
-        with:
-          ENV_TYPE: dev
-          DEBUG: True
-          SECRET_KEY: sample_secret
-          UPLOADS_DIR: uploads
-
-          EMAIL_USERNAME: test@example.com
-          EMAIL_PASSWORD: test_password
-          EMAIL_HOST: test.com
-          EMAIL_PORT: 25
-          EMAIL_SSL_SUPPORT: True
-          EMAIL_FROM: test@example.com
-
-          MONGODB_HOST: 172.21.0.11
-          MONGODB_PORT: 27017
-          MONGODB_DB: AudioServer
-          MONGODB_CONNECT: False
-          directory: /home/runner/work/AudioServer/AudioServer/.env
-          file_name: .env
       - uses: actions/checkout@v2
       - name: Build the stack
         run: docker-compose up -d
