@@ -10,15 +10,15 @@ jobs:
       - name: Create app infrastructure
         run: docker-compose up -d
       - name: Stating process config mongodb servers
-        run: docker-compose exec configsvr01 sh -c "mongo < /scripts/init-configserver.js"
+        run: docker-compose exec -T configsvr01 sh -c "mongo < /scripts/init-configserver.js"
       - name: Stating config mongodb Sharding for shard01
-        run: docker-compose exec shard01-a sh -c "mongo < /scripts/init-shard01.js"
+        run: docker-compose exec -T shard01-a sh -c "mongo < /scripts/init-shard01.js"
       - name: Stating config mongodb Sharding for shard02
-        run: docker-compose exec shard02-a sh -c "mongo < /scripts/init-shard02.js"
+        run: docker-compose exec -T shard02-a sh -c "mongo < /scripts/init-shard02.js"
       - name: Stating config mongodb Sharding for shard03
-        run: docker-compose exec shard03-a sh -c "mongo < /scripts/init-shard03.js"
+        run: docker-compose exec -T shard03-a sh -c "mongo < /scripts/init-shard03.js"
       - name: Stating config mongodb routers
-        run: docker-compose exec router01 sh -c "mongo < /scripts/init-router.js"
+        run: docker-compose exec -T router01 sh -c "mongo < /scripts/init-router.js"
       - name: Stating process enable mongo db and collections
-        run: docker-compose exec router01 sh -c "mongo < /scripts/enable.js"
+        run: docker-compose exec -T router01 sh -c "mongo < /scripts/enable.js"
 
