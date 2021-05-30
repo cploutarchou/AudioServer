@@ -7,12 +7,10 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build the stack
         run: docker-compose up -d
-      - name: Test building application
+      - name: Building application
         run: docker-compose build
-      - name: Test Create app infrastructure
+      - name: Create app infrastructure
         run: docker-compose up -d
-      - name: Initiate mongo cluster
-        run: ./scripts/init.sh
       - name: Stating process config mongodb servers
         run: docker-compose exec configsvr01 sh -c "mongo < /scripts/init-configserver.js"
       - name: Stating config mongodb Sharding for shard01
