@@ -1,7 +1,7 @@
 let generateUUID = () => {
     let d = new Date().getTime(); //Timestamp#}
     let d2 = (performance && performance.now && (performance.now() * 1000)) || 0; //Time in microseconds since page-load or 0 if unsupported#}
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
         let r = Math.random() * 16; //random number between 0 and 16#}
         if (d > 0) { //Use timestamp until depleted#}
             r = (d + r) % 16 | 0;
@@ -34,23 +34,23 @@ let get_files_by_upload_id = () => {
                         data: data,
                         retrieve: true,
                         columns: [
-                            { title: "Object ID" },
-                            { title: "File" },
-                            { title: "Play" },
-                            { title: "Download" },
+                            {title: "Object ID"},
+                            {title: "File"},
+                            {title: "Play"},
+                            {title: "Download"},
                         ],
                         columnDefs: [{
-                                targets: 2,
-                                render: function(data, type) {
-                                    if (type === 'display') {
-                                        data = '<a href="' + 'render/' + data + '/" target="_blank">Play</a>';
-                                    }
-                                    return data;
+                            targets: 2,
+                            render: function (data, type) {
+                                if (type === 'display') {
+                                    data = '<a href="' + 'render/' + data + '/" target="_blank">Play</a>';
                                 }
-                            },
+                                return data;
+                            }
+                        },
                             {
                                 targets: 3,
-                                render: function(data, type) {
+                                render: function (data, type) {
                                     if (type === 'display') {
                                         data = '<a href="' + 'render/' + data + '/" target="_blank">Download</a>';
                                     }
@@ -84,7 +84,7 @@ let find_by_object_id = (file_id) => {
     request.onload = () => {
         if (request.status !== 200) { // analyze HTTP status of the response
             loader(false)
-            swal("Something going wrong!", `No valid Object ID : ${file_id}`, "error");
+            swal("Something going wrong!", request.response, "error");
         } else {
             loader(false)
             if (request.response !== "") {
@@ -104,13 +104,13 @@ let find_by_object_id = (file_id) => {
 }
 let find_upload = document.getElementById('find_upload');
 let find_object = document.getElementById('find_object');
-find_upload.addEventListener('submit', function(e) {
+find_upload.addEventListener('submit', function (e) {
     e.preventDefault();
     loader(true)
     get_files_by_upload_id()
 });
 
-find_object.addEventListener('submit', function(e) {
+find_object.addEventListener('submit', function (e) {
     e.preventDefault();
     loader(true)
     let file = document.getElementById("file_object_id")
@@ -123,36 +123,36 @@ find_object.addEventListener('submit', function(e) {
 
 let create_batch = (job_id) => {
 
-        let formData = new FormData();
-        let request = new XMLHttpRequest();
-        const url = '/create_batch'
-        formData.set('uuid', job_id);
-        request.open("POST", url);
-        request.send(formData);
-        request.onload = () => {
+    let formData = new FormData();
+    let request = new XMLHttpRequest();
+    const url = '/create_batch'
+    formData.set('uuid', job_id);
+    request.open("POST", url);
+    request.send(formData);
+    request.onload = () => {
+        swal("Something going wrong!", `Error : ${request.response}`, "error");
+        if (request.status !== 200) { // analyze HTTP status of the response
             swal("Something going wrong!", `Error : ${request.response}`, "error");
-            if (request.status !== 200) { // analyze HTTP status of the response
-                swal("Something going wrong!", `Error : ${request.response}`, "error");
-            } else {
-                loader(false)
-                swal("Good job! Please save the upload ID", `Upload ID : ${request.response}`, "success").then(() => {
-                    let upload_id_div = document.getElementById("upload_id")
-                    upload_id_div.innerHTML = 'Upload ID :' +
-                        '<div class="alert-link" style="font-size: large;">' + request.response + '</div>.'
-                    upload_id_div.style.display = ""
-                    let upload_input = document.getElementById("upload_id_input")
-                    upload_input.value = request.response
-                    document.getElementById("exampleModalLabel").innerText = "Files for Upload id : " + job_id
-                    get_files_by_upload_id()
-                });
+        } else {
+            loader(false)
+            swal("Good job! Please save the upload ID", `Upload ID : ${request.response}`, "success").then(() => {
+                let upload_id_div = document.getElementById("upload_id")
+                upload_id_div.innerHTML = 'Upload ID :' +
+                    '<div class="alert-link" style="font-size: large;">' + request.response + '</div>.'
+                upload_id_div.style.display = ""
+                let upload_input = document.getElementById("upload_id_input")
+                upload_input.value = request.response
+                document.getElementById("exampleModalLabel").innerText = "Files for Upload id : " + job_id
+                get_files_by_upload_id()
+            });
 
-            }
         }
     }
-    // Constants
+}
+// Constants
 let UPLOAD_URL = "/upload";
 const job_uuid = generateUUID()
-    // List of pending files to handle when the Upload button is finally clicked.
+// List of pending files to handle when the Upload button is finally clicked.
 let PENDING_FILES = [];
 let upload_modal = document.getElementById("modal")
 let file_details_modal = document.getElementById("modal_file")
@@ -168,17 +168,17 @@ let loader = (enable) => {
     }
 
 }
-$(document).ready(function() {
+$(document).ready(function () {
     // Set up the drag/drop zone.
     initDropbox();
 
     // Set up the handler for the file input box.
-    $("#file-input").on("change", function() {
+    $("#file-input").on("change", function () {
         handleFiles(this.files);
     });
 
     // Handle the submit button.
-    $("#upload-button").on("click", function(e) {
+    $("#upload-button").on("click", function (e) {
         // If the user has JS disabled, none of this code is running but the
         // file multi-upload input box should still work. In this case they'll
         // just POST to the upload endpoint directly. However, with JS we'll do
@@ -198,7 +198,7 @@ function doUpload() {
     $("#upload :input").attr("disabled", "disabled");
 
     // Initialize the progress bar.
-    $progressBar.css({ "width": "0%" });
+    $progressBar.css({"width": "0%"});
 
     // Collect the form data.
     let fd = collectFormData();
@@ -212,10 +212,10 @@ function doUpload() {
     // Inform the back-end that we're doing this over ajax.
     fd.append("uuid", job_uuid);
     $.ajax({
-        xhr: function() {
+        xhr: function () {
             let xhrobj = $.ajaxSettings.xhr();
             if (xhrobj.upload) {
-                xhrobj.upload.addEventListener("progress", function(event) {
+                xhrobj.upload.addEventListener("progress", function (event) {
                     let percent = 0;
                     let position = event.loaded || event.position;
                     let total = event.total;
@@ -224,7 +224,7 @@ function doUpload() {
                     }
 
                     // Set the progress bar.
-                    $progressBar.css({ "width": percent + "%" });
+                    $progressBar.css({"width": percent + "%"});
                     $progressBar.text(percent + "%");
                 }, false)
             }
@@ -236,15 +236,15 @@ function doUpload() {
         processData: false,
         cache: false,
         data: fd,
-        success: function(data) {
-            $progressBar.css({ "width": "100%" });
+        success: function (data) {
+            $progressBar.css({"width": "100%"});
             data = JSON.parse(data);
             // How'd it go?
             if (data === "OK") {
                 create_batch(job_uuid)
             }
         },
-        error: function(data) {
+        error: function (data) {
             res = data.responseText.substring(1, data.responseText.length - 1);
             loader(false)
             swal("Something going wrong!", res, "error");
@@ -258,7 +258,7 @@ function collectFormData() {
     // Go through all the form fields and collect their names/values.
     let fd = new FormData();
 
-    $("#upload :input").each(function() {
+    $("#upload :input").each(function () {
         let $this = $(this);
         let name = $this.attr("name");
         let type = $this.attr("type") || "";
@@ -294,20 +294,20 @@ function initDropbox() {
     let dropbox = $("#dropbox");
 
     // On drag enter...
-    dropbox.on("dragenter", function(e) {
+    dropbox.on("dragenter", function (e) {
         e.stopPropagation();
         e.preventDefault();
         $(this).addClass("active");
     });
 
     // On drag over...
-    dropbox.on("dragover", function(e) {
+    dropbox.on("dragover", function (e) {
         e.stopPropagation();
         e.preventDefault();
     });
 
     // On drop...
-    dropbox.on("drop", function(e) {
+    dropbox.on("drop", function (e) {
         e.preventDefault();
         $(this).removeClass("active");
 

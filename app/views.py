@@ -42,8 +42,11 @@ def find(_id=None):
 
 @app.route('/file/<_id>', methods=['GET'])
 def get_file(_id):
-    print(_id)
-    return models.get_file(_id)
+    try:
+        data = models.get_file(_id)
+    except Exception as e:
+        return flask.Response(status=404, response=json.dumps(str(e)))
+    return flask.Response(status=200, response=json.dumps(data))
 
 
 @app.route('/top_10', methods=['GET'])
@@ -96,7 +99,8 @@ def register():
                                                      password=request.form['password'])
                 print(existing_user)
                 if len(existing_user) == 0:
-                    hash_pass = bcrypt.hashpw(request.form['password'].encode('utf-8'), bcrypt.gensalt())
+                    hash_pass = bcrypt.hashpw(
+                        request.form['password'].encode('utf-8'), bcrypt.gensalt())
                     try:
                         user = models.Users(email=request.form['email'], password=hash_pass,
                                             verification_token=token_hex(25)).save()
@@ -104,7 +108,8 @@ def register():
                         if user and user.id:
                             session['username'] = request.form['email']
                     except SaveConditionError as e:
-                        flash(f"Something going wrong. Unable to register . Error : {e}", category="error")
+                        flash(
+                            f"Something going wrong. Unable to register . Error : {e}", category="error")
                         return render_template('register.html')
                     flash(
                         f"Your account has been successfully created. Please verify your account before continue. "
@@ -139,10 +144,12 @@ def verify():
         if str(token) == str(login_user['verification_token']):
             data = {"status": 1, "updated_at": datetime.now()}
             login_user.update(**data)
-            flash("Your account has been successfully verified. Please log in", category="success")
+            flash("Your account has been successfully verified. Please log in",
+                  category="success")
             return render_template('login.html')
         else:
-            flash("Something going wrong. Unable to verify your account.", category="error")
+            flash("Something going wrong. Unable to verify your account.",
+                  category="error")
             return render_template('login.html')
 
 
@@ -179,8 +186,7 @@ def create_batch():
         if job_uuid is not None:
             try:
                 entry_files = models.Files.objects(job_id=job_uuid)
-                if len(entry_files) == 0:
-                    return_response = flask.Response(status=409, response="No files found")
+                if len(entry_files) == 0: return_response = flask.Response(status=409, response="No files found")
             except ValidationError as e:
                 return_response = flask.Response(status=409, response=e.message)
 
@@ -300,7 +306,6 @@ def uploads():
 @app.route('/render/<file_id>/<action>/', methods=['GET'])
 def download(file_id, action):
     folder = models.Files.objects(id=file_id).first()
-
     filename = f"{folder['title']}.{folder['format_type']}"
     root = f"{app.config['UPLOADED_AUDIOS_DEST']}/{folder['job_id']}"
     if action.lower() == 'play':

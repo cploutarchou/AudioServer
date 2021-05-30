@@ -18,8 +18,10 @@ class Users(Document):
     email = StringField(requires=True, index=True)
     verification_token = StringField(requires=True, index=True)
     status = IntField(requires=True, index=True, default=0)
-    created_at = DateTimeField(required=True, index=True, default=datetime.now())
-    updated_at = DateTimeField(required=True, index=True, default=datetime.now())
+    created_at = DateTimeField(
+        required=True, index=True, default=datetime.now())
+    updated_at = DateTimeField(
+        required=True, index=True, default=datetime.now())
     meta = {
         "auto_create_index": True,
         "index_background": True,
@@ -93,7 +95,8 @@ def convert_size(size_bytes):
 
 
 def insert_entry(data: dict):
-    required_fields = ['format_type', 'title', 'file_size', 'updated_at', 'status', 'job_id']
+    required_fields = ['format_type', 'title',
+                       'file_size', 'updated_at', 'status', 'job_id']
     results = None
     if all(i.lower() in required_fields for i in data.keys()):
         logger.info("Start creating mews entry to database")
@@ -126,12 +129,14 @@ def insert_batch(file: list = None):
     try:
         inserted_batches = []
         if 0 < len(file) < 5000:
-            batch_id = Batches(created_at=datetime.now(), updated_at=datetime.now(), files=file).save()
+            batch_id = Batches(created_at=datetime.now(),
+                               updated_at=datetime.now(), files=file).save()
             inserted_batches.append(str(batch_id.id))
         else:
             ras = list(chunks(file, 5000))
             for i in ras:
-                _id = Batches(created_at=datetime.now(), updated_at=datetime.now(), files=i).save()
+                _id = Batches(created_at=datetime.now(),
+                              updated_at=datetime.now(), files=i).save()
                 inserted_batches.append(str(_id.id))
         return inserted_batches
     except SaveConditionError as error:
@@ -140,7 +145,8 @@ def insert_batch(file: list = None):
 
 def insert_upload(batches: list = None):
     try:
-        batch_id = Uploads(created_at=datetime.now(), updated_at=datetime.now(), batches=batches).save()
+        batch_id = Uploads(created_at=datetime.now(),
+                           updated_at=datetime.now(), batches=batches).save()
         return str(batch_id.id)
     except SaveConditionError as error:
         raise error
@@ -160,28 +166,47 @@ def get_upload_details(upload_id):
         for file in data:
             res = Files.objects(id=file).first()
             if res:
-                item = [file, f"{res['title']}.{res['format_type']}", f"{file}/play", f"{file}/download"]
+                item = [file, f"{res['title']}.{res['format_type']}",
+                        f"{file}/play", f"{file}/download"]
                 final_data['data'].append(item)
         return flask.Response(status=200, response=json.dumps(final_data))
     except ValidationError as e:
         return flask.Response(status=201, response=e.message)
 
 
-def get_file(file_id):
-    try:
-        res = Files.objects(id=file_id, status=1).first()
-        print(res)
-        data = {}
-        if res and len(res) > 0:
-            for key in res:
-                data[key] = res[key]
-            data.pop("id", None)
-            data['file_size'] = convert_size(data["file_size"])
-            data['created_at'] = data['created_at'].strftime("%d-%m-%Y, %H:%M:%S")
-            data['updated_at'] = data['updated_at'].strftime("%d-%m-%Y, %H:%M:%S")
-        return flask.Response(status=200, response=json.dumps(data))
-    except ValidationError as e:
-        return flask.Response(status=201, response=e.message)
+def get_file(file_id: str = None):
+    """
+
+    Get Audio file details.
+
+    Args:
+        file_id (str): The file object ID.
+
+    Raises:
+        ValidationError:  if file id is not valid or if object id not found in database.
+
+    Returns:
+        dict : A dictionary with object data
+    """
+    if file_id and file_id is not None:
+        try:
+            res = Files.objects(id=file_id, status=1).first()
+            data = {}
+            if res and len(res) > 0:
+                for key in res:
+                    data[key] = res[key]
+                data.pop("id", None)
+                data['file_size'] = convert_size(data["file_size"])
+                data['created_at'] = data['created_at'].strftime(
+                    "%d-%m-%Y, %H:%M:%S")
+                data['updated_at'] = data['updated_at'].strftime("%d-%m-%Y, %H:%M:%S")
+                return data
+        except ValidationError as error:
+            raise Exception(str(error.message))
+    else:
+        error = f"Unable to get file details. Error not valid file id. Value is {file_id}"
+        logger.error(error)
+        raise Exception(error)
 
 
 def get_top_10():
@@ -204,7 +229,8 @@ def get_top_10():
     final_data = {}
     for i in data:
         final_data[i['_id']] = i['count'][i['_id']]
-    sorted_items = {k: v for k, v in sorted(final_data.items(), key=lambda item: item[1], reverse=True)}
+    sorted_items = {k: v for k, v in sorted(
+        final_data.items(), key=lambda item: item[1], reverse=True)}
     return sorted_items
 
 
