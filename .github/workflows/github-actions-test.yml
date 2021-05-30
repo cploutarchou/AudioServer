@@ -23,7 +23,7 @@ jobs:
           MONGODB_PORT: 27017
           MONGODB_DB: AudioServer
           MONGODB_CONNECT: False
-          directory: AudioServer/AudioServer/.env
+          directory: /home/runner/work/AudioServer/AudioServer/.env
           file_name: .env
       - uses: actions/checkout@v2
       - name: Build the stack
