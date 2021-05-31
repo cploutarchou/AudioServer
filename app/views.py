@@ -74,6 +74,9 @@ def login():
                 session['username'] = request.form['email']
                 session['verified'] = True
                 return redirect(url_for('index'))
+            else:
+                flash(f"Wrong password. Please try again.", category='error')
+                return render_template('login.html')
 
     return render_template('login.html')
 
@@ -92,9 +95,7 @@ def register():
     if request.method == 'POST':
         if all(field in request.form for field in required_fields):
             if request.form['password'] == request.form['confirm_password']:
-                existing_user = models.Users.objects(email=request.form['email'],
-                                                     password=request.form['password'])
-                print(existing_user)
+                existing_user = models.Users.objects(email=request.form['email'])
                 if len(existing_user) == 0:
                     hash_pass = bcrypt.hashpw(
                         request.form['password'].encode('utf-8'), bcrypt.gensalt())
@@ -107,7 +108,7 @@ def register():
                     except SaveConditionError as e:
                         flash(
                             f"Something going wrong. Unable to register . Error : {e}", category="error")
-                        return render_template('register.html')
+                        return redirect(url_for('register'))
                     flash(
                         f"Your account has been successfully created. Please verify your account before continue. "
                         f"Verification mail has been sent to your email address",
@@ -119,11 +120,11 @@ def register():
                     mailer.send()
                     return redirect(url_for('index'))
                 else:
-                    flash(f"That username already exists!")
-                    return render_template('register.html')
+                    flash(f"That username already exists! Please use a different username.", category='error')
+                    return redirect(url_for('register'))
             else:
                 flash("Password is not match", category="error")
-                return render_template('register.html')
+                return redirect(url_for('register'))
         else:
             flash("Pleaser fill all form fields", category="error")
             return redirect(url_for('register'))

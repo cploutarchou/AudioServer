@@ -17,22 +17,32 @@
         <main>
             <div class="container">
                 <div class="row justify-content-center">
-                    <div class="col-lg-7">
+                    <div class="col-lg-5">
                         <div class="card shadow-lg border-0 rounded-lg mt-5">
-
-                            <div class="card-header"><h3 class="text-center font-weight-light my-4">Create Account</h3>
-                            </div>
-                            {% with errors = get_flashed_messages(category_filter=["error"]) %}
-                                {% if errors %}
-                                    <div class="alert alert-danger text-lg-center">
-
+                            {% if get_flashed_messages(category_filter=["error"]) %}
+                                {% with errors = get_flashed_messages(category_filter=["error"]) %}
+                                    {% if errors %}
+                                        <div class="alert alert-danger text-lg-center ">
                                         {% for msg in errors %}
                                             <strong>{{ msg }}</strong>
-                                        {% endfor -%}
-
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                {% endwith %}
+                            {% endif %}
+                            {% if get_flashed_messages(category_filter=["success"]) %}
+                                {% with success = get_flashed_messages(category_filter=["success"]) %}
+                                    {% if success %}
+                                        <div class="alert alert-success text-lg-center">
+                                            {% for msg in success %}
+                                                <strong>{{ msg }}</strong>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                            <div class="card-header"><h3 class="text-center font-weight-light my-4">Create Account</h3>
+                            </div>
                             <div class="card-body">
                                 <form method="post" action="{{ url_for('register') }}">
                                     <div class="row mb-3">
@@ -64,7 +74,8 @@
                                         </div>
                                         <div class="mt-4 mb-0">
                                             <button class="d-grid btn btn-primary" type="submit">Create
-                                                Account</button>
+                                                Account
+                                            </button>
                                         </div>
                                     </div>
                                 </form>
