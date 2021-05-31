@@ -7,7 +7,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Building application
         run: docker-compose build
-      - name: Create default.cong infrastructure
+      - name: Create Application infrastructure
         run: docker-compose up -d
       - name: Wait Stage 1
         run: sleep 20
@@ -20,17 +20,17 @@ jobs:
       - name: Stating config mongodb Sharding for shard03
         run: docker-compose exec -T shard03-a sh -c "mongo < /scripts/init-shard03.js"
       - name: Wait Stage 2
-        run: sleep 240
+        run: sleep 300
       - name: Stating config mongodb routers
         run: docker-compose exec -T router01 sh -c "mongo < /scripts/init-router.js"
       - name: Stating process enable mongo db and collections
         run: docker-compose exec -T router01 sh -c "mongo < /scripts/enable.js"
       - name: Verifying Replica set for shard01
-        run: docker-compose exec exec  -T shard01-a -c "echo 'rs.status()' | mongo --port 27017"
+        run: docker-compose exec   -T shard01-a -c "echo 'rs.status()' | mongo --port 27017"
       - name: Verifying Replica set for shard02
-        run: docker-compose exec exec  -T -it shard02-a bash -c "echo 'rs.status()' | mongo --port 27017"
+        run: docker-compose exec   -T -it shard02-a bash -c "echo 'rs.status()' | mongo --port 27017"
       - name: Verifying Replica set for shard03
-        run: docker-compose exec exec -T -it shard03-a bash -c "echo 'rs.status()' | mongo --port 27017"
+        run: docker-compose exec  -T -it shard03-a bash -c "echo 'rs.status()' | mongo --port 27017"
       - name: finish
         run: echo "Infrastructure successfully builded."
 
