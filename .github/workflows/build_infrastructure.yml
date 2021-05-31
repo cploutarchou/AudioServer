@@ -26,11 +26,11 @@ jobs:
       - name: Stating process enable mongo db and collections
         run: docker-compose exec -T router01 sh -c "mongo < /scripts/enable.js"
       - name: Verifying Replica set for shard01
-        run: docker exec -it shard-01-node-a bash -c "echo 'rs.status()' | mongo --port 27017"
+        run: docker exec  -T -it shard-01-node-a bash -c "echo 'rs.status()' | mongo --port 27017"
       - name: Verifying Replica set for shard02
-        run: docker exec -it shard-02-node-a bash -c "echo 'rs.status()' | mongo --port 27017"
+        run: docker exec  -T -it shard-02-node-a bash -c "echo 'rs.status()' | mongo --port 27017"
       - name: Verifying Replica set for shard03
-        run: docker exec -it shard-03-node-a bash -c "echo 'rs.status()' | mongo --port 27017"
+        run: docker exec -T -it shard-03-node-a bash -c "echo 'rs.status()' | mongo --port 27017"
       - name: finish
         run: echo "Infrastructure successfully builded."
 
