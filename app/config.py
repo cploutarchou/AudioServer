@@ -23,7 +23,7 @@ mongo_connect = True if mongo_connect == 'True' else False
 email_username = os.environ["EMAIL_USERNAME"]
 email_password = os.environ["EMAIL_PASSWORD"]
 email_host = os.environ["EMAIL_HOST"]
-email_port = int(os.environ["EMAIL_PORT"])
+email_port = os.environ["EMAIL_PORT"]
 ssl_support = os.environ["EMAIL_SSL_SUPPORT"]
 email_from = os.environ["EMAIL_FROM"]
 ssl_support = True if ssl_support == 'True' else False

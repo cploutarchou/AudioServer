@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from mongoengine import ListField, StringField, DateTimeField, Document, IntField, errors
 from bson.json_util import dumps
 from logger import logger
-from main import app
+from app import app
 from mongoengine.errors import ValidationError, SaveConditionError
 
 

@@ -1,4 +1,7 @@
+import multiprocessing
 import os
+from distutils.util import strtobool
+
 import flask_mongoengine
 from flask import Flask
 import config as conf
@@ -15,10 +18,13 @@ app.config['MONGODB_CONNECT'] = conf.mongo_connect
 db = flask_mongoengine.MongoEngine()
 db.init_app(app)
 
-# Import all views in app
 from views import *
 
-if __name__ == "__main__":
-    app.run(debug=True, port=5000, threaded=True)
-else:
-    app.run(host="172.21.0.25", port=5000)
+bind = os.getenv('WEB_BIND', '172.21.0.25:5000')
+accesslog = '-'
+access_log_format = "%(h)s %(l)s %(u)s %(t)s '%(r)s' %(s)s %(b)s '%(f)s' '%(a)s' in %(D)sµs"
+
+workers = int(os.getenv('WEB_CONCURRENCY', multiprocessing.cpu_count() * 2))
+threads = int(os.getenv('PYTHON_MAX_THREADS', 4))
+
+reload = bool(strtobool(os.getenv('WEB_RELOAD', 'false')))

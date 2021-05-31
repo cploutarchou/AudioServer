@@ -20,7 +20,7 @@ from werkzeug.utils import secure_filename, redirect
 import bcrypt
 
 from mailer import Mailer
-from main import app
+from app import app
 
 uploads_dir = app.config['UPLOADED_AUDIOS_DEST']
 os.makedirs(uploads_dir, exist_ok=True)
