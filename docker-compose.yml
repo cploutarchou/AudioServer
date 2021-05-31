@@ -9,6 +9,9 @@ services:
       - 27017:27017
     volumes:
       - ./scripts/mongo:/scripts
+    networks:
+      audioserver-dev-env:
+        ipv4_address: 172.21.0.11
   router02:
     image: mongo:4.4
     container_name: router-02
@@ -19,6 +22,9 @@ services:
       - 27018:27017
     links:
       - router01
+    networks:
+      audioserver-dev-env:
+        ipv4_address: 172.21.0.12
 
 
   ## Config Servers
@@ -191,20 +197,33 @@ services:
         ipv4_address: 172.21.0.24
     ports:
       - 27030:27017
-
-  flask-app:
+  flask:
     build: .
     ports:
-      - 80:80
-    volumes:
-      - .:/code
+      - 5000:5000
+    expose:
+      - 5000
     env_file:
-      - sample.env
-    depends_on:
+      - .env
+    links:
       - router01
     networks:
       audioserver-dev-env:
         ipv4_address: 172.21.0.25
+
+  nginx:
+    image: nginx:1.19.6-alpine
+    container_name : nginx
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx/conf:/etc/nginx/conf.d
+    depends_on:
+      - flask
+    networks:
+      audioserver-dev-env:
+        ipv4_address: 172.21.0.26
 
   mongodb:
     image: mongo:4.4
