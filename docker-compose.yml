@@ -204,7 +204,7 @@ services:
     expose:
       - 5000
     env_file:
-      - sample.env.env
+      - sample.env
     links:
       - router01
     networks:
