@@ -73,8 +73,10 @@ def login():
                     login_user['password'].encode('utf-8'):
                 session['username'] = request.form['email']
                 session['verified'] = True
+                logger.info(f"User {session['username']} successfully logged in.")
                 return redirect(url_for('index'))
             else:
+                logger.warning(f"Invalid login attempt. User {request.form['email']}")
                 flash(f"Wrong password. Please try again.", category='error')
                 return render_template('login.html')
 
@@ -83,6 +85,7 @@ def login():
 
 @app.route('/logout', methods=['GET'])
 def logout():
+    logger.info(f"User {session['username']} successfully logged out.")
     session.clear()
     return redirect(url_for("login"))
 
@@ -102,23 +105,31 @@ def register():
                     try:
                         user = models.Users(email=request.form['email'], password=hash_pass,
                                             verification_token=token_hex(25)).save()
-                        print(user.verification_token)
                         if user and user.id:
                             session['username'] = request.form['email']
-                    except SaveConditionError as e:
-                        flash(
-                            f"Something going wrong. Unable to register . Error : {e}", category="error")
+                    except SaveConditionError as error:
+                        error_msg = f"Something going wrong. Unable to register . Error : {error}"
+                        flash(error_msg, category="error")
+                        logger.error(error_msg)
                         return redirect(url_for('register'))
-                    flash(
-                        f"Your account has been successfully created. Please verify your account before continue. "
-                        f"Verification mail has been sent to your email address",
-                        category="success")
                     url = f"{flask.request.host_url}/verify?id={user.id}&token={user.verification_token}"
                     mailer = Mailer()
                     mailer.set_to(to=[request.form['email']])
                     mailer.verify(url=url)
-                    mailer.send()
-                    return redirect(url_for('index'))
+                    if mailer.send():
+                        flash(
+                            f"Your account has been successfully created. Please verify your account before continue. "
+                            f"Verification mail has been sent to your email address",
+                            category="success"
+                        )
+                        logger.info(f"New account created : User email {request.form['email']}. V")
+                        return redirect(url_for('index'))
+                    else:
+                        error_msg = "Something went wrong. Unable to send verification email. " \
+                                    "Please contact the site administrator."
+                        flash(error_msg, category="success")
+                        logger.error(f"{error_msg}: User email {request.form['email']}. V")
+                        return redirect(url_for('index'))
                 else:
                     flash(f"That username already exists! Please use a different username.", category='error')
                     return redirect(url_for('register'))

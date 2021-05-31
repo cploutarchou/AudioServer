@@ -197,33 +197,33 @@ services:
         ipv4_address: 172.21.0.24
     ports:
       - 27030:27017
-  flask:
-    build: .
-    ports:
-      - 5000:5000
-    expose:
-      - 5000
-    env_file:
-      - sample.env
-    links:
-      - router01
-    networks:
-      audioserver-dev-env:
-        ipv4_address: 172.21.0.25
-
-  nginx:
-    image: nginx:1.19.6-alpine
-    container_name : nginx
-    restart: always
-    ports:
-      - 80:80
-    volumes:
-      - ./nginx/conf:/etc/nginx/conf.d
-    depends_on:
-      - flask
-    networks:
-      audioserver-dev-env:
-        ipv4_address: 172.21.0.26
+#  flask:
+#    build: .
+#    ports:
+#      - 5000:5000
+#    expose:
+#      - 5000
+#    env_file:
+#      - sample.env
+#    links:
+#      - router01
+#    networks:
+#      audioserver-dev-env:
+#        ipv4_address: 172.21.0.25
+#
+#  nginx:
+#    image: nginx:1.19.6-alpine
+#    container_name : nginx
+#    restart: always
+#    ports:
+#      - 80:80
+#    volumes:
+#      - ./nginx/conf:/etc/nginx/conf.d
+#    depends_on:
+#      - flask
+#    networks:
+#      audioserver-dev-env:
+#        ipv4_address: 172.21.0.26
 
   mongodb:
     image: mongo:4.4

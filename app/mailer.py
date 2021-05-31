@@ -75,6 +75,7 @@ class Mailer:
 
         self.server.sendmail(msg['From'], msg['To'], msg.as_string())
         self.disconnect()
+        return True
 
     def verify(self, url):
         content = render_template('verify.html', url=url)
