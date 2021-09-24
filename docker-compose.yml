@@ -10,7 +10,7 @@ services:
     volumes:
       - ./scripts/mongo:/scripts
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.11
   router02:
     image: mongo:4.4
@@ -23,7 +23,7 @@ services:
     links:
       - router01
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.12
 
 
@@ -38,7 +38,7 @@ services:
     ports:
       - 27019:27017
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.13
     links:
       - shard01-a
@@ -54,7 +54,7 @@ services:
     ports:
       - 27020:27017
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.14
     links:
       - configsvr01
@@ -68,7 +68,7 @@ services:
     ports:
       - 27021:27017
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.15
     links:
       - configsvr02
@@ -86,7 +86,7 @@ services:
     ports:
       - 27022:27017
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.16
     links:
       - shard01-b
@@ -99,7 +99,7 @@ services:
       - ./scripts/mongo:/scripts
       - /mongo_cluster/shard01-b:/data/db
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.17
     ports:
       - 27023:27017
@@ -111,7 +111,7 @@ services:
       - ./scripts/mongo:/scripts
       - /mongo_cluster/shard01-c:/data/db
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.18
     ports:
       - 27024:27017
@@ -127,7 +127,7 @@ services:
     ports:
       - 27025:27017
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.19
     links:
       - shard02-b
@@ -140,7 +140,7 @@ services:
       - ./scripts/mongo:/scripts
       - /mongo_cluster/shard02-b:/data/db
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.20
     ports:
       - 27026:27017
@@ -152,7 +152,7 @@ services:
       - ./scripts/mongo:/scripts
       - /mongo_cluster/shard02-c:/data/db
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.21
     ports:
       - 27027:27017
@@ -168,7 +168,7 @@ services:
     ports:
       - 27028:27017
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.22
     links:
       - shard03-b
@@ -181,7 +181,7 @@ services:
       - ./scripts/mongo:/scripts
       - /mongo_cluster/shard03-b:/data/db
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.23
     ports:
       - 27029:27017
@@ -193,7 +193,7 @@ services:
       - ./scripts/mongo:/scripts
       - /mongo_cluster/shard03-c:/data/db
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.24
     ports:
       - 27030:27017
@@ -208,7 +208,7 @@ services:
     links:
       - router01
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.25
 
   nginx:
@@ -222,7 +222,7 @@ services:
     depends_on:
       - flask
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.26
 
   mongodb:
@@ -230,7 +230,7 @@ services:
     volumes:
       - mongo_data:/data/db
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.50
     ports:
       - 27080:27017
@@ -255,7 +255,7 @@ services:
         limits:
           memory: 1g
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.60
   # Graylog: https://hub.docker.com/r/graylog/graylog/
   graylog:
@@ -276,7 +276,7 @@ services:
       - GRAYLOG_MONGODB_BIND_IP=172.21.0.50
     entrypoint: /usr/bin/tini -- wait-for-it elasticsearch:9200 --  /docker-entrypoint.sh
     networks:
-      audioserver-dev-env:
+      audioserver:
         ipv4_address: 172.21.0.35
     depends_on:
       - mongodb
@@ -302,7 +302,7 @@ volumes:
   es_data:
   graylog_data:
 networks:
-  audioserver-dev-env:
+  audioserver:
     name: WebServerInfrastructure
     driver: bridge
     ipam:
