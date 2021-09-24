@@ -198,7 +198,7 @@ services:
     ports:
       - 27030:27017
   flask:
-    build: .
+    image: git.christosploutarchou.com:5050/public-projects/audioserver:latest
     ports:
       - 5000:5000
     expose:
