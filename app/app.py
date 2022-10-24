@@ -20,7 +20,7 @@ db.init_app(app)
 
 from views import *
 
-bind = os.getenv('WEB_BIND', '172.21.0.25:5000')
+bind = os.getenv('WEB_BIND', 'flask:4000')
 accesslog = '-'
 access_log_format = "%(h)s %(l)s %(u)s %(t)s '%(r)s' %(s)s %(b)s '%(f)s' '%(a)s' in %(D)sµs"
 
