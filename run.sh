@@ -13,10 +13,3 @@ docker-compose up -d
 echo "###################################################"
 echo "#     Infrastructure successfully started.        #"
 echo "###################################################"
-echo "###################################################"
-echo "##       Start mongodb initialization             #"
-echo "###################################################"
-./scripts/init.sh
-echo "###################################################"
-echo "#    INFRASTRUCTURE SUCCESSFULLY STARTED          #"
-echo "###################################################"
