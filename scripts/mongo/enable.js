@@ -1,6 +1,0 @@
-sh.enableSharding("AudioServer")
-db.adminCommand({ shardCollection: "AudioServer.files", key: { _id: "hashed" } })
-db.adminCommand({ shardCollection: "AudioServer.batches", key: { _id: "hashed" } })
-db.adminCommand({ shardCollection: "AudioServer.uploads", key: { _id: "hashed" } })
-db.adminCommand({ shardCollection: "AudioServer.users", key: { _id: "hashed" } })
-rs.status()
