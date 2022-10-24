@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 
 import os
-
+load_dotenv()
 env_type = os.environ['ENV_TYPE']
 debug = os.environ['DEBUG']
 debug = True if debug == 'True' else False
